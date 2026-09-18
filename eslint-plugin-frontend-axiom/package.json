@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-frontend-axiom",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Custom ESLint rules enforcing Frontend Axiom's destructuring-first convention.",
   "main": "index.js",
   "license": "MIT",

@@ -31,7 +31,7 @@ Read `knowledge/principles.md` in full — it is non-negotiable, not a style sug
 
 Re-read your own diff against `knowledge/principles.md` directly. Look specifically for:
 
-- Any dot-chained property access — and don't rely on the linter here, it has verified blind spots (`principles.md` §3)
+- Any dot-chained property access — the linter catches most shapes but not a single deep read, so check yourself (`principles.md` §3)
 - Any object/array destructuring default that feeds a dependency array or a memoized child (referential instability)
 - Any component/hook doing more than one job
 - Any of the 5 data states left unhandled

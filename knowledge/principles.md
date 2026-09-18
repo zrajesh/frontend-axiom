@@ -57,7 +57,14 @@ Even these get destructured on the first line of the block rather than repeated 
 
 ### CI enforcement — and what it does *not* catch
 
-`eslint-plugin-frontend-axiom` flags 2+ distinct dot-accessed properties on the same base identifier within one scope. It is a deliberate heuristic, and it has **verified blind spots**: multi-hop chains (`data.user.email`), `this.props.x` / `this.state.x`, and violations split across sibling closures in the same component all pass cleanly. A green lint run is therefore *not* proof of compliance with this section — the reviewer in `/frontend-axiom:audit` is the real check. See the package's README for the full limitation list.
+`eslint-plugin-frontend-axiom` flags reaching into the same object for 2+ distinct properties. It tracks every hop of a chain (so `data.user.email` + `data.user.name` is reported against `data.user`) and resolves the root to its *variable*, so closures sharing a variable share a tally while same-named variables in different scopes stay separate.
+
+It still can't see everything, and these are the gaps a reviewer must cover:
+- A **single** deep read (`dataObj.user.email` used once) — each level sees only one property.
+- **Type-driven exceptions** — it will fire on the discriminated-union case above, where destructuring is the wrong fix. Suppress deliberately.
+- **Referential instability** — `const { skills = [] } = user` lints clean but allocates per render.
+
+A green lint run is a useful signal, not proof of compliance. `/frontend-axiom:audit` is the real check.
 
 ## 4. Reuse without premature abstraction
 

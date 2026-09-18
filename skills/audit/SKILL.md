@@ -20,7 +20,7 @@ Whatever scope you end up with, **state it explicitly in the report header**, in
 
 1. Do not assume intent from conversation history — evaluate the code as it exists, on its own merits.
 2. Walk every file in scope against each of: `knowledge/principles.md` (SOLID, destructuring rule, 5-state handling), `knowledge/testing.md`, `knowledge/security.md`, `knowledge/performance.md`, `knowledge/observability.md`, `knowledge/release-operations.md`, `knowledge/caching.md`, `knowledge/accessibility.md`, `knowledge/react-nextjs.md`, `knowledge/state-data.md`, plus any other relevant file in `knowledge/`.
-   - Do not trust a green lint run as evidence the destructuring convention holds — the rule has verified blind spots (multi-hop chains, `this.x.y`, sibling closures). Read the code for those yourself; see `knowledge/principles.md` §3.
+   - A green lint run is not sufficient evidence the destructuring convention holds — the rule can't see single deep reads or referentially-unstable defaults, and it over-fires on discriminated unions. Read for those yourself; see `knowledge/principles.md` §3.
 3. For each finding, classify severity: **Critical** (security hole, broken functionality, data loss risk), **Warning** (violates a hard rule but not exploitable/broken — e.g. dot-chained access, missing empty-state), **Suggestion** (style/optimization, non-blocking).
 4. Report only — do not fix issues in this pass. Fixing is a separate, explicit follow-up step the user asks for after reading the report.
 

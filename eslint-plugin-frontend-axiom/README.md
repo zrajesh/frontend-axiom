@@ -35,18 +35,27 @@ This is a heuristic, not a data-flow/type analysis. It skips:
 - Fluent/builder-style chains that happen to read two properties before calling something.
 - Discriminated unions read after a narrowing check (`switch (action.type)` then `action.payload` per branch). Destructuring there is the *wrong* fix — it breaks TypeScript narrowing. See `knowledge/principles.md` §3 exception 4; suppress with an inline disable or the `ignore` option.
 
-## What it does NOT catch (verified false negatives)
+## Coverage
 
-These were confirmed by running the rule, not inferred. They matter because they include the rule's own headline case, so **a green lint run is not proof of compliance**:
-
-| Pattern | Caught? | Why |
+| Pattern | Caught | Reported against |
 |---|---|---|
-| `user.name + user.email` | ✅ yes | Base is a plain identifier — the case the rule is built for |
-| `data.user.email + data.user.name` | ❌ **no** | Multi-hop. Only the inner `data.user` hop has an `Identifier` base; the outer `.email`/`.name` hops hang off a `MemberExpression`, so they're never recorded. One distinct property (`user`) is below the threshold. |
-| `this.props.a + this.props.b` | ❌ **no** | `this` is a `ThisExpression`, not an `Identifier`, so class-style access is never evaluated at all |
-| `product.id` and `product.name` in two sibling arrow functions | ❌ **no** | The rule resets its per-base tally at every function boundary, so each closure sees only one property. Very common in React (several small handlers each reading one field of the same prop). |
+| `user.name + user.email` | ✅ | `user` |
+| `data.user.email + data.user.name` | ✅ | `data.user` — the level actually reached into twice |
+| `res.data.user.id + res.data.user.role` | ✅ | `res.data.user` |
+| `this.props.a + this.props.b` | ✅ | `this.props`, scoped to its enclosing function/class |
+| `product.id` / `product.name` in two sibling closures | ✅ | `product` — closures share the variable, so the tally is shared |
+| Two different variables that happen to share a name | ✅ not flagged | Resolved per-variable, so they're never conflated |
 
-The multi-hop gap is the significant one: `data.user.email` is the exact shape `principles.md` §3 argues against. Fixing it means walking the full `MemberExpression` chain from its root identifier and counting each hop, rather than only inspecting hops whose object is already an `Identifier`. The closure gap needs real scope-manager-based tracking of where the base variable was *declared*, not the current AST-node-type scope stack. Both are known and unfixed in v0.1 — treat this rule as a cheap backstop for simple cases and rely on `/frontend-axiom:audit` for actual enforcement.
+v0.1 missed the middle four. They're covered now because the rule tracks **every hop of a chain keyed by its full static path**, and resolves the root identifier to its **variable via scope analysis** rather than tallying per-function. Each is a regression test in `tests/`.
+
+## Known limitations
+
+- **A single deep read isn't flagged.** `dataObj.user.email` appearing exactly once sees one property at each level, so nothing crosses the threshold. The rule targets *repeated* reaching-in; a lone deep read is left to review.
+- **Not type-aware.** It can't tell a discriminated union from an ordinary object, so it will fire on `action.type` + `action.payload` in a narrowing `switch` — where destructuring is the *wrong* fix because it breaks TypeScript narrowing (`knowledge/principles.md` §3, exception 4). Suppress with an inline disable or the `ignore` option.
+- **Nested design-token objects** (`theme.colors` + `theme.spacing`) are flagged even though destructuring them isn't always clearer. Add the base name to `ignore`.
+- **Referential instability is invisible to it.** `const { skills = [] } = user` passes lint but allocates a fresh array each render. That's a review concern, not a lint one.
+
+So: it's a real backstop for the common shapes now, not a token one — but `/frontend-axiom:audit` is still the enforcement mechanism, not a green lint run.
 
 ## Install
 
@@ -96,4 +105,4 @@ Runs the rule against ESLint's official `RuleTester` (8 valid + 3 invalid cases)
 
 ## Status
 
-v0.1. Rule logic is covered by the `RuleTester` suite above and verified end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project. It is still a **heuristic**, not data-flow analysis — start it at `"warn"` and tune `ignore`/`threshold` against your codebase before promoting it to `"error"` in CI.
+v0.2. Rule logic is covered by a 20-case `RuleTester` suite (including regression tests for every false negative found in v0.1) and verified end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project. It is still a **heuristic**, not type-aware analysis — start it at `"warn"`, tune `ignore`/`threshold` against your codebase, then promote it to `"error"` once the warning count reaches zero (`knowledge/release-operations.md`).

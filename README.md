@@ -32,6 +32,7 @@ frontend-axiom/
 │   ├── accessibility.md
 │   └── storage.md
 ├── eslint-plugin-frontend-axiom/  # enforces the destructuring rule in CI, not just by convention
+├── evals/                          # behavioral tests — do the agents actually follow the standards?
 └── docs/audits/                    # /audit writes its reports here
 ```
 
@@ -77,15 +78,17 @@ v0.2 — wiring verified by execution, standards reviewed by an independent audi
 Verified:
 - `claude plugin validate --strict` passes.
 - All skills, agents, and 2 MCP servers confirmed loading via `plugin details`.
-- The ESLint rule passes an 11-case `RuleTester` suite (`npm test` in `eslint-plugin-frontend-axiom/`) and works end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project.
+- The ESLint rule passes a 20-case `RuleTester` suite (`npm test` in `eslint-plugin-frontend-axiom/`) and works end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project.
+- A behavioral eval suite (`evals/`) pins the four standards most likely to regress; the harness is confirmed working (`claude plugin eval .`).
 
 v0.2 acted on an independent audit (`docs/audits/frontend-axiom-self-audit-2026-09-18.md`), which found the v0.1 standards stopped at "code that looks clean in a PR." Fixed since:
 - Added the three missing production domains: `testing.md`, `observability.md`, `release-operations.md`.
 - `new-feature` now actually delegates to `frontend-architect` — v0.1's README claimed it did, and it didn't.
 - The destructuring rule gained two exceptions it needed to stop producing *worse* code: discriminated unions (destructuring breaks TypeScript narrowing) and referentially-unstable object/array defaults (which silently defeat memoization).
-- Documented the ESLint rule's verified blind spots — it misses multi-hop chains like `data.user.email`, which is its own headline case. A green lint run is explicitly not proof of compliance.
+- Rewrote the ESLint rule to close the blind spots the audit found. It now tracks every hop of a chain (`data.user.email` — its own headline case, previously missed) and resolves roots via scope analysis so sibling closures share a tally. Every one of those is now a regression test.
+- Added `evals/` — behavioral tests for the standards, because v0.1's false `frontend-architect` claim survived precisely by being asserted rather than tested.
 - Replaced hand-wavy thresholds with numbers: per-route JS budgets, a `warn`→`error` promotion rule.
 
 Known gaps, deliberately not yet filled: auth architecture, privacy/consent, i18n, real-time data patterns, list virtualization, design-system governance. See the audit's "Missing knowledge domains" table for the prioritized list.
 
-Still unverified at runtime: `skills/audit/SKILL.md` uses `context: fork` + `agent: code-auditor` intending to give the auditor isolated, unbiased context — **that isolation has not been confirmed.** Check it on the first real audit. The plugin also has no `evals/` suite, so agent *behavior* is asserted rather than tested.
+Still unverified at runtime: `skills/audit/SKILL.md` uses `context: fork` + `agent: code-auditor` intending to give the auditor isolated, unbiased context — **that isolation has not been confirmed.** Check it on the first real audit.

@@ -17,7 +17,7 @@ const RULES = {
 const plugin = {
   meta: {
     name: "eslint-plugin-frontend-axiom",
-    version: "0.1.0",
+    version: "0.2.0",
   },
   rules: {
     "no-repeated-property-access": noRepeatedPropertyAccess,
