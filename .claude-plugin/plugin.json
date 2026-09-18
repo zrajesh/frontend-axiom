@@ -1,0 +1,23 @@
+{
+  "name": "frontend-axiom",
+  "displayName": "Frontend Axiom",
+  "description": "Turns Claude Code into a senior frontend architect: SOLID principles, destructuring-first code style, pixel-perfect Figma-to-code validation, and independent SOLID/security/performance/a11y audits, backed by a growing knowledge base of your team's frontend standards.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Rajesh Bhattarai",
+    "email": "rajesh.iamdev@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "frontend",
+    "react",
+    "nextjs",
+    "architecture",
+    "solid",
+    "accessibility",
+    "performance",
+    "security",
+    "seo"
+  ],
+  "defaultEnabled": true
+}

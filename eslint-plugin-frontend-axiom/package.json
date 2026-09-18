@@ -1,0 +1,18 @@
+{
+  "name": "eslint-plugin-frontend-axiom",
+  "version": "0.1.0",
+  "description": "Custom ESLint rules enforcing Frontend Axiom's destructuring-first convention.",
+  "main": "index.js",
+  "license": "MIT",
+  "files": ["index.js", "rules", "README.md"],
+  "scripts": {
+    "test": "node tests/no-repeated-property-access.test.js"
+  },
+  "peerDependencies": {
+    "eslint": ">=8"
+  },
+  "devDependencies": {
+    "eslint": "^9"
+  },
+  "keywords": ["eslint", "eslintplugin", "eslint-plugin"]
+}
