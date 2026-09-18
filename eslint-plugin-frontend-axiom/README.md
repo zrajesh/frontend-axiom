@@ -33,6 +33,20 @@ This is a heuristic, not a data-flow/type analysis. It skips:
 
 - A single property accessed twice (e.g. `user.name` read twice) won't trigger — only 2+ *distinct* properties do — but a legitimate pattern like `theme.colors.primary` used alongside `theme.spacing.md` will trigger on `theme`, even though destructuring nested design-token objects isn't always cleaner. Use `// eslint-disable-next-line frontend-axiom/no-repeated-property-access` or add the base name to `ignore` for cases like this.
 - Fluent/builder-style chains that happen to read two properties before calling something.
+- Discriminated unions read after a narrowing check (`switch (action.type)` then `action.payload` per branch). Destructuring there is the *wrong* fix — it breaks TypeScript narrowing. See `knowledge/principles.md` §3 exception 4; suppress with an inline disable or the `ignore` option.
+
+## What it does NOT catch (verified false negatives)
+
+These were confirmed by running the rule, not inferred. They matter because they include the rule's own headline case, so **a green lint run is not proof of compliance**:
+
+| Pattern | Caught? | Why |
+|---|---|---|
+| `user.name + user.email` | ✅ yes | Base is a plain identifier — the case the rule is built for |
+| `data.user.email + data.user.name` | ❌ **no** | Multi-hop. Only the inner `data.user` hop has an `Identifier` base; the outer `.email`/`.name` hops hang off a `MemberExpression`, so they're never recorded. One distinct property (`user`) is below the threshold. |
+| `this.props.a + this.props.b` | ❌ **no** | `this` is a `ThisExpression`, not an `Identifier`, so class-style access is never evaluated at all |
+| `product.id` and `product.name` in two sibling arrow functions | ❌ **no** | The rule resets its per-base tally at every function boundary, so each closure sees only one property. Very common in React (several small handlers each reading one field of the same prop). |
+
+The multi-hop gap is the significant one: `data.user.email` is the exact shape `principles.md` §3 argues against. Fixing it means walking the full `MemberExpression` chain from its root identifier and counting each hop, rather than only inspecting hops whose object is already an `Identifier`. The closure gap needs real scope-manager-based tracking of where the base variable was *declared*, not the current AST-node-type scope stack. Both are known and unfixed in v0.1 — treat this rule as a cheap backstop for simple cases and rely on `/frontend-axiom:audit` for actual enforcement.
 
 ## Install
 

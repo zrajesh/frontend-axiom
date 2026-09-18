@@ -12,12 +12,15 @@ allowed-tools: Read, Glob, Grep, Bash, Write
 
 ## Target
 
-`$ARGUMENTS` names what to review: a feature name, a file/folder path, or a diff range (e.g. `git diff main...HEAD`). If not given, default to the diff against the last commit tagged `audit-baseline`, or ask the user what to scope the review to if that tag doesn't exist.
+`$ARGUMENTS` names what to review: a feature name, a file/folder path, or a diff range (e.g. `git diff main...HEAD`). If not given, default to the diff against the repository's default branch (`git diff origin/main...HEAD`, or `master` if that's the default) — it needs no external bookkeeping and is almost always the change set under review.
+
+Whatever scope you end up with, **state it explicitly in the report header**, including the exact diff command or paths used, so a reader can reproduce the review.
 
 ## Process
 
 1. Do not assume intent from conversation history — evaluate the code as it exists, on its own merits.
-2. Walk every file in scope against each of: `knowledge/principles.md` (SOLID, destructuring rule, 5-state handling), `knowledge/security.md`, `knowledge/performance.md`, `knowledge/caching.md`, `knowledge/accessibility.md`, `knowledge/react-nextjs.md`, `knowledge/state-data.md`, plus any other relevant file in `knowledge/`.
+2. Walk every file in scope against each of: `knowledge/principles.md` (SOLID, destructuring rule, 5-state handling), `knowledge/testing.md`, `knowledge/security.md`, `knowledge/performance.md`, `knowledge/observability.md`, `knowledge/release-operations.md`, `knowledge/caching.md`, `knowledge/accessibility.md`, `knowledge/react-nextjs.md`, `knowledge/state-data.md`, plus any other relevant file in `knowledge/`.
+   - Do not trust a green lint run as evidence the destructuring convention holds — the rule has verified blind spots (multi-hop chains, `this.x.y`, sibling closures). Read the code for those yourself; see `knowledge/principles.md` §3.
 3. For each finding, classify severity: **Critical** (security hole, broken functionality, data loss risk), **Warning** (violates a hard rule but not exploitable/broken — e.g. dot-chained access, missing empty-state), **Suggestion** (style/optimization, non-blocking).
 4. Report only — do not fix issues in this pass. Fixing is a separate, explicit follow-up step the user asks for after reading the report.
 
@@ -47,10 +50,17 @@ Date: <date> · Reviewed: <files/paths in scope>
 | SOLID | pass/fail |
 | Destructuring convention | pass/fail |
 | 5-state data handling | pass/fail |
+| Tests (coverage of new behavior, CI-gated) | pass/fail |
 | Security (CSP/XSS/CSRF/headers/input validation) | pass/fail |
 | Performance (CWV, bundle, images/fonts) | pass/fail |
+| Caching (HTTP/CDN/client cache correctness) | pass/fail |
+| State & data layer (normalization, cache invalidation) | pass/fail |
+| Observability (error tracking, RUM on new paths) | pass/fail |
+| Release safety (flag-gated / rollback path, if blast radius warrants) | pass/fail |
 | Accessibility | pass/fail |
 | SEO (if user-facing/indexable) | pass/fail |
 ```
+
+Every row must be covered by the process step above — if you add a row here, add the corresponding `knowledge/` file to the walk in step 2, and vice versa. A checklist row with no backing standard is theater.
 
 Keep it concise and actionable — a reviewer document someone will actually read, not a wall of text.

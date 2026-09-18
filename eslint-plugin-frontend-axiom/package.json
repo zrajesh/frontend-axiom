@@ -9,7 +9,7 @@
     "test": "node tests/no-repeated-property-access.test.js"
   },
   "peerDependencies": {
-    "eslint": ">=8"
+    "eslint": ">=9"
   },
   "devDependencies": {
     "eslint": "^9"

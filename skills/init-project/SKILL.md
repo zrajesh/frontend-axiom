@@ -56,4 +56,15 @@ Write or update the project's root `CLAUDE.md` with a short "Stack" section reco
 
 ## Step 4 — read the knowledge base
 
-Before generating any scaffold code, read `knowledge/principles.md`, `knowledge/react-nextjs.md`, `knowledge/css.md`, and `knowledge/state-data.md` so the initial structure already follows them (feature-first folders, destructuring convention, 5-state data handling pattern, etc).
+Before generating any scaffold code, read `knowledge/principles.md`, `knowledge/react-nextjs.md`, `knowledge/css.md`, `knowledge/state-data.md`, and any other file in `knowledge/` relevant to this project so the initial structure already follows them (feature-first folders, destructuring convention, 5-state data handling, etc).
+
+## Step 5 — establish the baselines that are expensive to retrofit
+
+Scaffold time is the cheapest moment to set these up, and the hardest to add later once hundreds of files exist. Set up each one, or explicitly tell the user which you skipped and why:
+
+- **Security headers** (`knowledge/security.md`) — CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors` in `next.config` / the hosting layer.
+- **Accessibility linting** (`knowledge/accessibility.md`) — `eslint-plugin-jsx-a11y` alongside the frontend-axiom rule.
+- **Test runner + CI gate** (`knowledge/testing.md`) — the test tooling and a CI job that actually fails the build on failure. A test setup nobody runs is worth nothing.
+- **Error tracking and RUM** (`knowledge/observability.md`) — wired on day one, so the app is never in production unobserved.
+- **Caching defaults** (`knowledge/caching.md`) — `Cache-Control` for hashed static assets vs HTML/API.
+- **SEO baseline** (`knowledge/seo-ai-seo.md`) — `robots.txt` and a sitemap route, if the app is publicly indexable.

@@ -1,7 +1,7 @@
 ---
 name: new-feature
 description: Plan and build a new frontend feature the Frontend Axiom way. Interviews requirements first, never assumes, then implements following SOLID and the destructuring convention with full data-state handling. Use whenever the user asks to build/add a new UI feature, page, or flow.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion, Agent, Task
 ---
 
 # New Feature
@@ -23,13 +23,29 @@ Ask via AskUserQuestion where there's a genuine decision the user must make (not
 
 Sketch the component/hook/API-slice breakdown against `knowledge/principles.md` (SOLID, small units, reuse-on-third-duplication) and `knowledge/react-nextjs.md` (Server vs Client Component split, rendering strategy). If Claude Code's Plan Mode is available in this session, use it to get explicit sign-off on the plan before writing code.
 
-## Step 3 — build
+## Step 3 — build, by delegating to the `frontend-architect` agent
 
-- Follow the destructuring rule exactly (`knowledge/principles.md` §3) — no `obj.prop.prop2` chains.
-- Implement RTK Query endpoints (or the confirmed data layer) per `knowledge/state-data.md`, mapped to all 5 data states.
-- Apply `knowledge/security.md` at every boundary this feature touches (input validation, no secrets in client code, correct storage for any tokens — `knowledge/storage.md`).
-- Apply `knowledge/performance.md` (image/font handling, code-splitting heavy pieces, resource hints if this feature is on a critical path) and `knowledge/accessibility.md` (semantic HTML, keyboard/labels/contrast) as you go, not as an afterthought.
+Steps 1-2 run inline because they need to talk to the user. The build does not — and by this point the spec is fully settled, which is exactly the condition under which handing work to a subagent is safe.
 
-## Step 4 — self-check before declaring done
+**Invoke the `frontend-architect` subagent** (via the Agent/Task tool) to implement it. That agent owns the build standards — don't restate them here and don't implement inline, or the standards drift between two files.
 
-Re-read the diff against `knowledge/principles.md` directly: any dot-chained property access? Any component doing more than one job? Any data state left unhandled? Fix before finishing rather than leaving it for `/audit` to catch.
+The agent starts cold, so the delegation prompt must carry the *complete* spec — it cannot see the interview:
+- The confirmed requirement and user story
+- The exact API contract / data shape agreed in Step 1 (never leave the agent to invent field names)
+- Every UI state in scope, including empty/error/permission variants
+- The component/hook/API-slice breakdown from Step 2
+- The project's confirmed stack from the root `CLAUDE.md`
+- The absolute paths of the `knowledge/` files it must read first
+- Any Figma reference, so it can be pixel-checked afterward
+
+If anything in that list is still unknown, go back to Step 1 — do not delegate a spec with holes in it, and do not let the agent guess.
+
+## Step 4 — verify before declaring done
+
+Review what came back against `knowledge/principles.md` yourself — delegating the build does not delegate responsibility for it:
+- Any dot-chained property access, or unstable object/array defaults feeding a dependency array (`principles.md` §3)?
+- Any component or hook doing more than one job?
+- Any of the 5 data states left unhandled?
+- Tests written and passing for the new behavior (`knowledge/testing.md`)?
+
+Fix what you find rather than leaving it for `/frontend-axiom:audit`. If there's a Figma reference, finish with `/frontend-axiom:pixel-check`.

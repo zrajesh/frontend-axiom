@@ -2,15 +2,22 @@
 
 ## Core Web Vitals targets
 
+These three — and only these three — are Google's Core Web Vitals. Don't report anything else as a "Core Web Vital" in an audit.
+
 | Metric | Good | Meaning |
 |---|---|---|
 | **LCP** (Largest Contentful Paint) | ≤ 2.5s | Main content visibly loaded |
 | **INP** (Interaction to Next Paint) | ≤ 200ms | Responsiveness to input, replaced FID |
 | **CLS** (Cumulative Layout Shift) | ≤ 0.1 | Visual stability |
+
+## Other key metrics (diagnostic, not CWV)
+
+| Metric | Good | Meaning |
+|---|---|---|
 | **FCP** (First Contentful Paint) | ≤ 1.8s | Something rendered |
 | **TTFB** (Time to First Byte) | ≤ 0.8s | Server responsiveness |
 
-`/pixel-check` and `/audit` should check these via the Chrome DevTools MCP's performance trace tooling, not just eyeball it.
+**Lab vs field — these are not interchangeable.** `/pixel-check` and `/audit` measure via the Chrome DevTools MCP, which is a *lab* trace on one machine, on one network, with a warm cache. Google's "Good" thresholds above are defined against *field* data from real users. A passing lab trace is a smoke test, not evidence the targets are met in production — for that you need real-user monitoring, which is why every feature also needs the field-side setup covered in `observability.md`.
 
 ## Resource hints
 
@@ -23,7 +30,16 @@
 
 - Route-level code splitting is automatic in Next.js — additionally `dynamic(() => import(...))` for heavy, below-the-fold, or conditionally-rendered components (modals, charts, rich text editors).
 - No barrel-file imports that pull in an entire library for one function — import the specific submodule.
-- Run a bundle analyzer as part of `/audit` for any PR that adds a new dependency; flag anything that meaningfully grows the shipped JS for a marginal feature.
+- **Set a per-route JS budget and enforce it in CI** — a prose instruction to "watch bundle size" is ignored within a sprint. Starting defaults, compressed (brotli/gzip), for first-load JS per route:
+
+  | Route type | Budget |
+  |---|---|
+  | Landing / marketing / anything SEO-critical | ≤ 100 KB |
+  | Standard app route | ≤ 170 KB |
+  | Heavy tooling route (editor, dashboard, charts) | ≤ 250 KB, and justified in review |
+
+  Tune to your product, but tune deliberately and in one place. Enforce with `next build` output diffing, `bundlesize`, or Lighthouse CI budgets, and fail the build on a breach (`release-operations.md`). A budget raise is a decision someone signs off on, not a silent commit.
+- Run a bundle analyzer in `/audit` for any PR adding a dependency. Flag: a new library duplicating existing capability, a large import for one function, and anything pushing a route toward its budget.
 - Dedupe overlapping dependencies (e.g. two date libraries) — flag in audits.
 
 ## Images & fonts

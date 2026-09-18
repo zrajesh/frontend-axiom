@@ -25,12 +25,39 @@ const { name = "", email = "", skills = [] } = user;
 
 Then use `name`, `email`, `skills` directly — never `user.name` again in that scope. Applies to function params, hook returns, API responses, and context values, at any nesting depth.
 
-**Narrow exceptions**, and even these get destructured on the first line of the block rather than repeated inline:
-- Event handler signatures (`event.target.value`) — destructure immediately: `const { value } = event.target;`
-- Idiomatic third-party chains you don't control the shape of (`error.response.status` in a catch block)
-- Method/namespace calls that aren't data reads (`router.push(...)`, `array.map(...)`, `api.get(...)`) — this rule is about *data property access*, not calling functions
+### Defaults must be referentially stable
 
-CI enforcement: `eslint-plugin-frontend-axiom` flags 2+ dot-accessed properties on the same base identifier within one scope. It's a heuristic, not a perfect parser of intent — see that package's README.
+Primitive defaults (`""`, `0`, `false`) are free. **Object and array defaults allocate a new value on every evaluation** — `const { skills = [] } = user` hands back a brand-new array every render where `user.skills` is undefined. If that value then reaches a `useEffect`/`useMemo`/`useCallback` dependency array, a `React.memo`'d child, or a context value, it silently defeats memoization and can cause infinite effect loops. Applied carelessly, this rule actively contradicts the referential-stability guidance in `react-nextjs.md`.
+
+- Primitive default → inline, always.
+- Object/array default that stays local to the render (read, mapped, never passed down or depended on) → inline is fine.
+- Object/array default that reaches a dependency array, a memoized child, or a context value → hoist a module-level constant:
+  ```js
+  const EMPTY_SKILLS = [];               // module scope — one stable reference
+  const { skills = EMPTY_SKILLS } = user;
+  ```
+
+### Narrow exceptions
+
+Even these get destructured on the first line of the block rather than repeated inline:
+
+1. Event handler signatures (`event.target.value`) — destructure immediately: `const { value } = event.target;`
+2. Idiomatic third-party chains you don't control the shape of (`error.response.status` in a catch block)
+3. Method/namespace calls that aren't data reads (`router.push(...)`, `array.map(...)`, `api.get(...)`) — this rule is about *data property access*, not calling functions
+4. **Discriminated unions / tagged variants — do not destructure before narrowing.** TypeScript narrows a union by testing a discriminant on the *whole* object. Splitting the discriminant off (`const { type, payload } = action`) severs that correlation: narrowing `type` no longer narrows `payload`, and variants with differently-shaped payloads often won't compile when destructured together. Narrow first on the undestructured variable, then destructure *inside* the narrowed branch:
+   ```ts
+   switch (action.type) {
+     case "success": {
+       const { payload } = action; // correctly narrowed to the success variant
+       return payload;
+     }
+   }
+   ```
+   This covers reducers, RTK Query result unions, and any `status`/`kind`/`type`-driven branching. The linter cannot detect narrowing — when it fires here, add an inline disable or put the base name in its `ignore` list.
+
+### CI enforcement — and what it does *not* catch
+
+`eslint-plugin-frontend-axiom` flags 2+ distinct dot-accessed properties on the same base identifier within one scope. It is a deliberate heuristic, and it has **verified blind spots**: multi-hop chains (`data.user.email`), `this.props.x` / `this.state.x`, and violations split across sibling closures in the same component all pass cleanly. A green lint run is therefore *not* proof of compliance with this section — the reviewer in `/frontend-axiom:audit` is the real check. See the package's README for the full limitation list.
 
 ## 4. Reuse without premature abstraction
 
