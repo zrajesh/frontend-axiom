@@ -1,9 +1,10 @@
 ---
 max_turns: 15
 allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
+timeout_seconds: 600
 ---
 
-Review this code against this project's frontend conventions and tell me exactly what you would change and why. If a frontend-architect agent or frontend standards are available to you, use them.
+Review this code against this project's frontend conventions and tell me exactly what you would change and why. If a frontend-architect agent or frontend standards are available to you, use them. Everything you need is in this message — do not explore the repository.
 
 ```tsx
 function ProfileCard(props) {
