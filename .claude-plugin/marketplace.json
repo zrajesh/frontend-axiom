@@ -1,0 +1,15 @@
+{
+  "name": "frontend-axiom",
+  "description": "Frontend engineering standards for React/Next.js projects built to run at scale.",
+  "owner": {
+    "name": "Rajesh Bhattarai",
+    "email": "rajesh.iamdev@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "frontend-axiom",
+      "source": "./",
+      "description": "Senior frontend architect standards for React/Next.js: SOLID, destructuring-first style, testing, observability, release ops, pixel-perfect Figma validation, and independent audits."
+    }
+  ]
+}

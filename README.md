@@ -38,22 +38,60 @@ frontend-axiom/
 
 Skills, agents, and MCP servers are all discovered by **convention** from their directories — the manifest deliberately carries no `skills`/`agents`/`mcpServers` path fields. See "Plugin wiring gotchas" below before changing that.
 
-## Try it locally
+## Install
+
+Install once, use in every project. Run from anywhere:
+
+```bash
+# Register this repo as a marketplace (note the ./ prefix — a bare path is rejected)
+claude plugin marketplace add /path/to/frontend-axiom
+
+# Install it at user scope
+claude plugin install frontend-axiom@frontend-axiom
+```
+
+That's it — every new Claude Code session in any directory now has the skills, agents, and MCP servers. Confirm from an unrelated folder:
+
+```bash
+claude plugin list                      # frontend-axiom should show "enabled", scope "user"
+claude plugin details frontend-axiom    # expect 5 skills, 2 agents, 2 MCP servers
+```
+
+If MCP servers show `(0)`, the wiring is broken — see "Plugin wiring gotchas" below.
+
+### First use in a project
+
+```
+/frontend-axiom:init-project
+```
+
+Detects an existing stack (or interviews you for a new one), then sets up the ESLint rule, security headers, test runner, and observability baselines.
+
+### Figma authentication
+
+The Figma MCP server is registered but needs you to authenticate before `/frontend-axiom:pixel-check` works — run `/mcp` in a session and complete the Figma OAuth flow. Chrome DevTools needs no auth.
+
+### Developing the plugin itself
+
+When changing the plugin, load it directly instead of reinstalling:
 
 ```bash
 claude --plugin-dir /path/to/frontend-axiom
 ```
 
-Inside that session, edits to skills/agents/knowledge pick up after `/reload-plugins`.
+Edits to skills/agents/knowledge pick up after `/reload-plugins`. After committing changes, refresh the installed copy:
 
-Verify what actually loaded at any time:
+```bash
+claude plugin marketplace update frontend-axiom
+claude plugin update frontend-axiom
+```
+
+Validate before shipping a change:
 
 ```bash
 claude plugin validate /path/to/frontend-axiom --strict
-claude --plugin-dir /path/to/frontend-axiom plugin details frontend-axiom
+cd /path/to/frontend-axiom/eslint-plugin-frontend-axiom && npm test
 ```
-
-The second command prints the real component inventory. Expected: **5 skills, 2 agents, 2 MCP servers**. If MCP servers show `(0)`, the wiring is broken — see below.
 
 ## Core workflow
 
