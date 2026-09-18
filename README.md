@@ -9,8 +9,8 @@ SOLID principles, house code conventions enforced in CI, mandatory handling of e
 ## Quick start
 
 ```bash
-# 1. Register the marketplace  (use a ./ or absolute path — a bare path is rejected)
-claude plugin marketplace add /path/to/frontend-axiom
+# 1. Register the marketplace
+claude plugin marketplace add zrajesh/frontend-axiom
 
 # 2. Install at user scope — available in every project from now on
 claude plugin install frontend-axiom@frontend-axiom
@@ -30,8 +30,8 @@ claude
 /frontend-axiom:init-project
 ```
 
-> **Installing from GitHub instead:** once this repo is pushed, others install it with
-> `claude plugin marketplace add <your-username>/frontend-axiom` — same `plugin install` step after.
+> **Working from a local clone instead?** Point the marketplace at the directory —
+> `claude plugin marketplace add ./frontend-axiom` (a bare path with no `./` is rejected).
 
 ---
 
@@ -62,7 +62,8 @@ Useful built-ins alongside these:
 ### Install & verify
 
 ```bash
-claude plugin marketplace add /path/to/frontend-axiom   # register (./ or absolute path)
+claude plugin marketplace add zrajesh/frontend-axiom    # from GitHub
+claude plugin marketplace add ./frontend-axiom          # ...or from a local clone
 claude plugin install frontend-axiom@frontend-axiom     # install at user scope
 
 claude plugin list                                      # expect: enabled, scope user
