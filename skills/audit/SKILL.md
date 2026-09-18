@@ -58,6 +58,10 @@ Date: <date> · Reviewed: <files/paths in scope>
 | Observability (error tracking, RUM on new paths) | pass/fail |
 | Release safety (flag-gated / rollback path, if blast radius warrants) | pass/fail |
 | Accessibility | pass/fail |
+| Auth & session (if touched) | pass/fail |
+| Privacy & consent (if tracking touched) | pass/fail |
+| Lists & pagination (if applicable) | pass/fail |
+| i18n (if multi-locale) | pass/fail |
 | SEO (if user-facing/indexable) | pass/fail |
 ```
 

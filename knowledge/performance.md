@@ -17,6 +17,30 @@ These three — and only these three — are Google's Core Web Vitals. Don't rep
 | **FCP** (First Contentful Paint) | ≤ 1.8s | Something rendered |
 | **TTFB** (Time to First Byte) | ≤ 0.8s | Server responsiveness |
 
+## Test on the device your users actually have
+
+Most performance work is validated on a developer laptop on office wifi, which is the fastest environment the product will ever run in. At millions of users daily the p75 is a mid-range Android phone on a congested mobile network, and that is the number Google's thresholds are measured against.
+
+**The budgets above are meaningless until verified under this profile:**
+
+| Profile | CPU throttle | Network | Represents |
+|---|---|---|---|
+| **Baseline (required)** | 4× slowdown | Fast 3G — ~1.6 Mbps down, 150ms RTT | Mid-range Android, typical mobile |
+| **Stress (for global reach)** | 6× slowdown | Slow 3G — ~400 Kbps, 400ms RTT | Low-end device, congested/rural network |
+| Desktop | none | none | A sanity check, not a target |
+
+Both throttles are available in the Chrome DevTools MCP, so `/frontend-axiom:pixel-check` and `/frontend-axiom:audit` can apply them — measuring unthrottled and calling it done is the single most common way a "fast" site ships slow.
+
+**What changes under throttling** — these are invisible at full speed and dominate on real hardware:
+
+- **JS parse/execute becomes the bottleneck, not download.** A 200 KB bundle downloads quickly on 4G and still costs seconds of main-thread work on a weak CPU. Shipping less JavaScript beats compressing it.
+- **INP degrades sharply.** Handlers that feel instant on a laptop cross 200ms when the CPU is 4–6× slower. Long tasks must be split (see below).
+- **Hydration cost is magnified.** Prefer Server Components and push `"use client"` to the leaves (`react-nextjs.md`).
+- **Layout shift surfaces.** Slow image and font loads expose every unreserved dimension (`css.md`).
+- **Memory ceilings matter.** A low-end phone has a fraction of the headroom — this is where unvirtualized long lists cause outright crashes, not just jank (`lists-and-pagination.md`).
+
+Field RUM must segment by device class and connection type (`observability.md`). A healthy aggregate routinely hides a failing mobile p75, and the aggregate is the number teams usually watch.
+
 **Lab vs field — these are not interchangeable.** `/pixel-check` and `/audit` measure via the Chrome DevTools MCP, which is a *lab* trace on one machine, on one network, with a warm cache. Google's "Good" thresholds above are defined against *field* data from real users. A passing lab trace is a smoke test, not evidence the targets are met in production — for that you need real-user monitoring, which is why every feature also needs the field-side setup covered in `observability.md`.
 
 ## Resource hints
