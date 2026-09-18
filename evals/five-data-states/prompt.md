@@ -1,9 +1,9 @@
 ---
-max_turns: 12
-allowed_tools: [Read, Glob, Grep, Skill]
+max_turns: 15
+allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
 ---
 
-Write the React component for an orders list. The API contract is already agreed and final, so don't ask about it:
+Write the React component for an orders list, following this project's frontend conventions. If a frontend-architect agent or frontend standards are available to you, use them. The API contract is already agreed and final, so don't ask about it:
 
 `GET /orders` returns `{ orders: Array<{ id: string; reference: string; total: number }> }`
 

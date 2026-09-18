@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-rule:
+    name: ESLint rule suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install and test the ESLint plugin
+        working-directory: eslint-plugin-frontend-axiom
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+  manifests:
+    name: Manifests and links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JSON parses
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .mcp.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "ok  $f"
+          done
+
+      - name: Plugin manifest validates (strict)
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate .claude-plugin/plugin.json --strict
+          claude plugin validate .claude-plugin/marketplace.json --strict
+
+      - name: Referenced knowledge files exist
+        run: |
+          missing=0
+          for f in $(grep -rhoE '\$\{CLAUDE_PLUGIN_ROOT\}/knowledge/[a-z-]+\.md' skills/ agents/ \
+                     | sed 's|${CLAUDE_PLUGIN_ROOT}/||' | sort -u); do
+            if [ ! -f "$f" ]; then echo "MISSING: $f"; missing=1; fi
+          done
+          exit $missing
+
+  # Evals call the Anthropic API, so they need a credential and cost money.
+  # This job is skipped automatically unless ANTHROPIC_API_KEY is configured
+  # as a repository secret.
+  evals:
+    name: Eval smoke test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run one cheap eval case
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY not set — skipping evals."
+            exit 0
+          fi
+          npm install -g @anthropic-ai/claude-code
+          claude plugin eval . \
+            --case token-storage-security \
+            --runs 1 --ablation none \
+            --trust-plugin --no-publish \
+            --max-cost-usd 1.00 \
+            --threshold 1.0

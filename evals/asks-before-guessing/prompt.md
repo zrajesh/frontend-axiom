@@ -1,6 +1,6 @@
 ---
-max_turns: 12
-allowed_tools: [Read, Glob, Grep, Skill]
+max_turns: 15
+allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
 ---
 
-Add a user profile card to our app that shows the user's details from our API.
+Add a user profile card to our app that shows the user's details from our API. Follow this project's frontend conventions.

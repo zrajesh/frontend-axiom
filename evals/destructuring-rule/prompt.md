@@ -1,9 +1,9 @@
 ---
-max_turns: 12
-allowed_tools: [Read, Glob, Grep, Skill]
+max_turns: 15
+allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
 ---
 
-Review this code against this project's frontend conventions and tell me exactly what you would change and why.
+Review this code against this project's frontend conventions and tell me exactly what you would change and why. If a frontend-architect agent or frontend standards are available to you, use them.
 
 ```tsx
 function ProfileCard(props) {

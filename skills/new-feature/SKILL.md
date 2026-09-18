@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion, Agent, Task
 
 # New Feature
 
-## Step 1 — interview, don't assume (see `knowledge/principles.md` §1 and §7)
+## Step 1 — interview, don't assume (see `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` §1 and §7)
 
 Before writing any code, get clear on:
 - What problem/user story is this solving, and for whom?
@@ -21,7 +21,7 @@ Ask via AskUserQuestion where there's a genuine decision the user must make (not
 
 ## Step 2 — plan
 
-Sketch the component/hook/API-slice breakdown against `knowledge/principles.md` (SOLID, small units, reuse-on-third-duplication) and `knowledge/react-nextjs.md` (Server vs Client Component split, rendering strategy). If Claude Code's Plan Mode is available in this session, use it to get explicit sign-off on the plan before writing code.
+Sketch the component/hook/API-slice breakdown against `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` (SOLID, small units, reuse-on-third-duplication) and `${CLAUDE_PLUGIN_ROOT}/knowledge/react-nextjs.md` (Server vs Client Component split, rendering strategy). If Claude Code's Plan Mode is available in this session, use it to get explicit sign-off on the plan before writing code.
 
 ## Step 3 — build, by delegating to the `frontend-architect` agent
 
@@ -42,10 +42,10 @@ If anything in that list is still unknown, go back to Step 1 — do not delegate
 
 ## Step 4 — verify before declaring done
 
-Review what came back against `knowledge/principles.md` yourself — delegating the build does not delegate responsibility for it:
+Review what came back against `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` yourself — delegating the build does not delegate responsibility for it:
 - Any dot-chained property access, or unstable object/array defaults feeding a dependency array (`principles.md` §3)?
 - Any component or hook doing more than one job?
 - Any of the 5 data states left unhandled?
-- Tests written and passing for the new behavior (`knowledge/testing.md`)?
+- Tests written and passing for the new behavior (`${CLAUDE_PLUGIN_ROOT}/knowledge/testing.md`)?
 
 Fix what you find rather than leaving it for `/frontend-axiom:audit`. If there's a Figma reference, finish with `/frontend-axiom:pixel-check`.

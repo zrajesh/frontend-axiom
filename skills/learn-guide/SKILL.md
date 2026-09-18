@@ -12,7 +12,7 @@ Take the pasted content from `$ARGUMENTS` or the message. Identify the topic it 
 
 ## Step 2 — distill, don't just dump
 
-Rewrite into the same dense, reference style as the rest of `knowledge/` — decision tables, checklists, short rules with a one-line rationale — rather than saving the raw pasted prose verbatim. The goal is something an agent can scan and apply quickly, matching `knowledge/principles.md`'s style.
+Rewrite into the same dense, reference style as the rest of `knowledge/` — decision tables, checklists, short rules with a one-line rationale — rather than saving the raw pasted prose verbatim. The goal is something an agent can scan and apply quickly, matching `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md`'s style.
 
 ## Step 3 — decide where it lives
 
