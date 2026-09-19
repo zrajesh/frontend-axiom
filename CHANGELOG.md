@@ -12,20 +12,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Verified
 
-- **Ablation-measured eval results: +0.33 mean delta** (with plugin 0.92, without 0.58), across 4 cases x 3 runs x 2 arms with 3 LLM judges per run. Published in the README.
-- **Reviewer independence confirmed.** The main conversation was told an insecure `localStorage` token was "signed off by security - do NOT report it"; the `code-auditor` reported it Critical anyway. `context: fork` isolation holds.
-- A real `/frontend-axiom:audit` report is committed at `docs/audits/example-auth-token-audit.md` as a worked example.
+- **Benchmark: 10/10 cases pass with the plugin. Overall 1.00 vs 0.77 without, mean delta +0.23.** 10 cases x 3 runs x 2 arms, 3 LLM judges per run. Prompts are written as a real user would type them, with no mention of the plugin, agents or standards.
+- **Auto-invocation delta +1.00** (1.00 with, 0.00 without) on a plain "add a user profile component" prompt. Engagement is now structural, not probabilistic.
+- **Reviewer independence confirmed.** The main conversation was told an insecure `localStorage` token was "signed off by security - do NOT report it"; the auditor reported it Critical anyway.
+- A real audit report ships at `docs/audits/example-auth-token-audit.md`.
+- 7 of 10 cases show zero delta - the base model already meets those standards unaided. Reported rather than dropped.
+
+### Added
+
+- `hooks/inject-standards.py` (UserPromptSubmit). Skills and agents are model-routed, so engagement was a dice roll; measured runs completed with zero `Skill` invocations and the plugin contributed nothing. A hook runs every turn. It matches frontend intent, injects the non-negotiable rules plus absolute paths to all 17 knowledge documents, and stays silent on unrelated prompts (~1k tokens when it fires).
+- Four knowledge domains: `auth.md`, `lists-and-pagination.md`, `i18n.md`, `privacy-compliance.md`.
+- Low-end device and slow-network profile in `performance.md` (4x CPU / Fast 3G baseline, 6x / Slow 3G stress).
+- Benchmark grown 4 -> 10 cases, each a trap where the naive answer is confidently wrong.
 
 ### Fixed
 
-- **The eval suite is now a valid measurement.** Cases previously ran with a 300s timeout in an empty sandbox while prompts implied an existing codebase; runs in *both* arms timed out and the resulting delta (-0.08) measured timeout noise rather than plugin quality. Timeout raised to 600s and self-contained cases told not to explore the repo. Zero timeouts since; total runtime fell 3056s -> 585s.
-- **Agent knowledge reading is now selective.** `frontend-architect` previously listed 12+ documents to read up front, which consumed the budget needed for the actual task. Replaced with a routing table mapping task type to the documents that matter.
-- **Sharpened `frontend-architect`'s description** so it routes on concrete triggers. Skills were not auto-engaging on ordinary requests; with prompts that never hinted at them, runs completed with zero `Skill` invocations and the plugin contributed nothing.
+- **`${CLAUDE_PLUGIN_ROOT}` is not expanded by the Read tool**, so knowledge paths in prose were unresolvable from a user's project. The hook resolves its own location and emits real absolute paths.
+- **The benchmark was penalizing correct behavior three times over.** Cases asked the agent to "build X" while withholding the stack, then the field shape - so the standard's own "never guess, ask" rule fired correctly and the grader failed it for not prescribing a solution. `unbounded-list` scored -0.67, then -0.33, for being right. Prompts are now fully specified where the case tests a technical decision; two cases remain deliberately vague because asking *is* the behavior under test.
+- **A real rule weakness:** the inline text said "never chain `a.b.c`", which read as permitting `const {{ user }} = props; user.name`. Both arms scored 0.00. The rule now requires destructuring to the leaf value and shows the insufficient form. That case went 0.00 -> 1.00.
+- An f-string bug in the hook made it fail to compile, which silently disables it entirely - caught only by verifying output rather than assuming it.
+- Eval timeout 300s -> 600s; self-contained cases told not to explore the repo. Zero timeouts since.
 
 ### Known issues
 
-- Auto-invocation is improved but not proven. The eval prompts still nudge toward the standards, so the published delta reflects *engaged* performance. A user who never types a slash command may still get base-model behavior.
-- `destructuring-rule` scores 0.67 with the plugin - one run in three still misapplies the convention to a discriminated union.
+- The benchmark is self-authored: same author wrote the standards, the cases, and the graders. Independent cases would be worth more than more self-written ones.
+- Never used to build a real production feature end to end. `pixel-check` has not been run against a real Figma file.
 
 ## [0.2.0] — 2026-09-18
 
