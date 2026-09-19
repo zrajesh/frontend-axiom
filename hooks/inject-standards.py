@@ -61,10 +61,15 @@ NON-NEGOTIABLE:
 3. AUTH TOKENS live in httpOnly+Secure+SameSite cookies. NEVER localStorage or
    sessionStorage — one XSS there is account takeover. Logout revokes server-side AND
    purges the client cache.
-4. DESTRUCTURE once with defaults; never chain `a.b.c`. Object/array defaults that reach
-   a dependency array must be module-level constants. EXCEPTION: discriminated unions —
-   narrow on the whole value first, destructure inside the branch (destructuring first
-   breaks TypeScript narrowing).
+4. DESTRUCTURE TO THE LEAF VALUE, then use the bare variable. Pulling out the object and
+   still reading through it is NOT enough:
+       const {{ user }} = props; user.name        <- still wrong
+       const {{ user = {{}} }} = props;
+       const {{ name = "", email = "" }} = user;  <- correct; now use `name`, `email`
+   Applies at every depth. Object/array defaults that reach a dependency array must be
+   module-level constants, not fresh literals. EXCEPTION: discriminated unions — narrow on
+   the whole value first, destructure inside the branch (destructuring first breaks
+   TypeScript narrowing).
 5. TESTS ship with the code. Untested auth, payment, or mutation logic is a Critical defect.
 6. SEMANTIC HTML, keyboard operability, real labels, and contrast are defaults, not a pass.
 7. NO unbounded collection fetch. Past ~1,000 rows, virtualize. Append-heavy data uses

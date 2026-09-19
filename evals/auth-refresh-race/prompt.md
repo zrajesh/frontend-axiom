@@ -4,6 +4,8 @@ allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
 timeout_seconds: 600
 ---
 
+This is an existing Next.js 15 (App Router) + TypeScript + RTK Query + Tailwind app with Vitest set up. Answer for that stack — do not ask about it, and do not explore the repository.
+
 Our app fires several API calls in parallel when the dashboard loads. When the access token has expired, users sometimes get logged out even though they're actively using the app. Here's our interceptor:
 
 ```ts
