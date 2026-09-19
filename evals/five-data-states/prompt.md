@@ -4,7 +4,7 @@ allowed_tools: [Read, Glob, Grep, Skill, Task, Agent]
 timeout_seconds: 600
 ---
 
-Write the React component for an orders list, following this project's frontend conventions. If a frontend-architect agent or frontend standards are available to you, use them. Everything you need is in this message — do not explore the repository. The API contract is already agreed and final, so don't ask about it:
+Write the React component for an orders list. Everything you need is in this message — do not explore the repository. The API contract is already agreed and final, so don't ask about it:
 
 `GET /orders` returns `{ orders: Array<{ id: string; reference: string; total: number }> }`
 
