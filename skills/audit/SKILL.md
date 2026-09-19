@@ -16,6 +16,26 @@ allowed-tools: Read, Glob, Grep, Bash, Write
 
 Whatever scope you end up with, **state it explicitly in the report header**, including the exact diff command or paths used, so a reader can reproduce the review.
 
+## Step 0 — run the gates first, before reading any code
+
+Opinions are cheap; evidence is not. Run this before forming a view, so findings cite measurements rather than impressions:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/verify.sh"
+# add --url http://localhost:3000 if a dev server is running (enables the live axe scan)
+# add --budget-kb N to override the default 170KB first-load JS budget
+```
+
+It runs: typecheck, lint (incl. `jsx-a11y`), test suite, bundle budget, and a live axe scan when a URL is given.
+
+Read the results exactly as written:
+
+- **FAIL** → a Critical or Warning finding with the tool's own output quoted as evidence. Never soften a gate failure to a Suggestion.
+- **SKIP** → **this is a finding, not a neutral result.** A gate that cannot run proves nothing. "No test script", "no eslint config", or "eslint matched 0 files" each mean the project has no enforcement there, which `${CLAUDE_PLUGIN_ROOT}/knowledge/testing.md` and `release-operations.md` treat as a defect in its own right.
+- **PASS** → cite it. "Typecheck clean, 0 lint errors across 34 files" is worth more in a report than any adjective.
+
+A green gate is not a clean bill of health — it bounds what's mechanically checkable. Everything in the checklist below still needs a human-grade read.
+
 ## Process
 
 1. Do not assume intent from conversation history — evaluate the code as it exists, on its own merits.
@@ -44,7 +64,16 @@ Date: <date> · Reviewed: <files/paths in scope>
 ## Suggestions
 - <file:line> — <issue>
 
-## Checklist
+## Gates (measured — from verify.sh)
+| Gate | Result |
+|---|---|
+| Typecheck | pass/fail/skip + detail |
+| Lint (incl. jsx-a11y) | pass/fail/skip + counts |
+| Tests | pass/fail/skip |
+| Bundle budget | pass/fail/skip + KB |
+| Accessibility (axe, live) | pass/fail/skip + violations |
+
+## Checklist (reviewed — human-grade judgement)
 | Area | Status |
 |---|---|
 | SOLID | pass/fail |
