@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Frontend Axiom — outcome-based benchmark.
+#
+# The eval suite in evals/ asks an LLM whether an answer sounds right. This
+# asks whether the produced CODE actually works: it runs the agent on a task,
+# then compiles, lints and renders the result. The grader is tsc, eslint and
+# a headless DOM — not an opinion, and not authored by the same hand that
+# wrote the standards.
+#
+# Arms:
+#   treatment = installed plugin disabled + --plugin-dir <repo>  (local code)
+#   control   = installed plugin disabled, no plugin at all
+# Both verified: treatment sees the standards, control does not.
+#
+# Usage: run.sh [--runs N] [--task NAME] [--keep]
+
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BENCH="$ROOT/benchmark"
+TEMPLATE="$BENCH/.template/node_modules"
+RUNS=3; ONLY=""; KEEP=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runs) RUNS="$2"; shift 2 ;;
+    --task) ONLY="$2"; shift 2 ;;
+    --keep) KEEP=1; shift ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+[[ -d "$TEMPLATE" ]] || { echo "missing $TEMPLATE — run npm install in benchmark/.template" >&2; exit 2; }
+
+STAMP="$(date +%Y%m%dT%H%M%S)"
+OUT="$BENCH/results/$STAMP"; mkdir -p "$OUT"
+WORK="$(mktemp -d)"
+# Always restore the user's plugin state, even on Ctrl-C or error.
+restore() { claude plugin enable frontend-axiom >/dev/null 2>&1 || true
+            [[ "$KEEP" -eq 1 ]] || rm -rf "$WORK"; }
+trap restore EXIT INT TERM
+claude plugin disable frontend-axiom >/dev/null 2>&1
+
+# score_run <dir> -> "passed total"
+score_run() {
+  local d="$1" passed=0 total=0
+  pushd "$d" >/dev/null || return 1
+
+  # Gate 1: it must compile.
+  total=$((total+1))
+  npx --no-install tsc --noEmit >/dev/null 2>&1 && passed=$((passed+1))
+
+  # Gate 2: lint clean (includes jsx-a11y).
+  total=$((total+1))
+  local errs
+  errs=$(npx --no-install eslint src --format json 2>/dev/null \
+         | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{
+             try{const r=JSON.parse(d);console.log(r.reduce((a,f)=>a+f.errorCount,0))}catch(e){console.log(99)}})" 2>/dev/null)
+  [[ "${errs:-99}" -eq 0 ]] && passed=$((passed+1))
+
+  # Gates 3..N: the behavioural spec. Each test is one point.
+  npx --no-install vitest run --reporter=json --outputFile=.vitest.json >/dev/null 2>&1
+  if [[ -f .vitest.json ]]; then
+    read -r tp tt <<<"$(node -e "
+      try{const r=require('./.vitest.json');
+        console.log(r.numPassedTests||0, r.numTotalTests||0);}catch(e){console.log(0,0)}" 2>/dev/null)"
+    passed=$((passed + ${tp:-0})); total=$((total + ${tt:-0}))
+  else
+    total=$((total+7))   # spec failed to run at all: all behavioural points lost
+  fi
+  popd >/dev/null
+  echo "$passed $total"
+}
+
+echo "=== OUTCOME BENCHMARK · $RUNS run(s)/arm · $STAMP ==="
+printf '%-16s %-10s %-8s %s\n' TASK ARM SCORE DETAIL
+SUMMARY="$OUT/summary.tsv"; : > "$SUMMARY"
+INVALID_TOTAL=0
+
+for TASKDIR in "$BENCH/tasks"/*/; do
+  TASK="$(basename "$TASKDIR")"
+  [[ -n "$ONLY" && "$TASK" != "$ONLY" ]] && continue
+  PROMPT="$(cat "$TASKDIR/task.md")"
+
+  for ARM in treatment control; do
+    armpass=0; armtotal=0; arminvalid=0
+    for i in $(seq 1 "$RUNS"); do
+      D="$WORK/$TASK-$ARM-$i"; mkdir -p "$D/src"
+      cp -R "$TASKDIR/seed/." "$D/" 2>/dev/null
+      cp "$BENCH/template-package.json" "$D/package.json"
+      ln -s "$TEMPLATE" "$D/node_modules"
+
+      if [[ "$ARM" == "treatment" ]]; then
+        (cd "$D" && claude --plugin-dir "$ROOT" \
+            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Skill" "Task" "Agent" \
+            -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
+      else
+        (cd "$D" && claude \
+            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" \
+            -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
+      fi
+      # A run that never happened is not a zero — scoring it as one lets a
+      # rate limit or a crash manufacture a delta out of nothing.
+      LOG="$OUT/$TASK-$ARM-$i.log"
+      produced=$(ls "$D/src" 2>/dev/null | wc -l | tr -d ' ')
+      if grep -qiE "usage limit|session limit|Not logged in|rate.?limit|API Error" "$LOG" 2>/dev/null \
+         || [[ "${produced:-0}" -eq 0 ]]; then
+        why=$(grep -oiE "usage limit|session limit|Not logged in|rate.?limit|API Error" "$LOG" 2>/dev/null | head -1)
+        arminvalid=$((arminvalid + 1)); INVALID_TOTAL=$((INVALID_TOTAL + 1))
+        printf '%-16s %-10s %-8s %s\n' "$TASK" "$ARM#$i" "INVALID" "${why:-no file produced} — excluded"
+        continue
+      fi
+
+      mkdir -p "$D/assert" && cp -R "$TASKDIR/assert/." "$D/assert/"
+      read -r p t <<<"$(score_run "$D")"
+      armpass=$((armpass + p)); armtotal=$((armtotal + t))
+      printf '%-16s %-10s %-8s %s\n' "$TASK" "$ARM#$i" "$p/$t" "$(ls "$D/src" 2>/dev/null | tr '\n' ' ')"
+    done
+    valid=$((RUNS - arminvalid))
+    pct=$(node -e "console.log(${armtotal:-0}?(${armpass}/${armtotal}).toFixed(3):'0.000')")
+    echo -e "$TASK\t$ARM\t$armpass\t$armtotal\t$pct\t$valid" >> "$SUMMARY"
+  done
+done
+
+echo
+echo "=== RESULTS ==="
+node "$BENCH/report.js" "$SUMMARY"
+if [[ "$INVALID_TOTAL" -gt 0 ]]; then
+  echo "WARNING: $INVALID_TOTAL run(s) were INVALID (limit/error/no output) and excluded."
+fi
+echo "artifacts: $OUT"
