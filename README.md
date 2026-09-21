@@ -37,31 +37,35 @@ claude
 
 ## Does it actually work?
 
-Measured, not asserted. Every case runs **with** the plugin and again **without** it, so the delta below is the plugin's own contribution — not the base model's competence.
+Honest answer, measured with an ablation: **less than this README previously claimed.**
 
-| Case | With | Without | Δ |
-|---|---|---|---|
-| Engages at all on a plain request (no mention of the plugin) | 1.00 | 0.00 | **+1.00** |
-| Applies house conventions to the leaf value | 1.00 | 0.00 | **+1.00** |
-| Handles all 5 data states, empty included | 1.00 | 0.67 | **+0.33** |
-| Refuses to invent an API shape | 1.00 | 1.00 | 0.00 |
-| Single-flight refresh under parallel 401s | 1.00 | 1.00 | 0.00 |
-| Gates analytics on consent before the request | 1.00 | 1.00 | 0.00 |
-| Logout revokes server-side and purges the cache | 1.00 | 1.00 | 0.00 |
-| Server-renders pages that must rank | 1.00 | 1.00 | 0.00 |
-| Refuses `localStorage` for an auth token | 1.00 | 1.00 | 0.00 |
-| Paginates + virtualizes a 50k-row list | 1.00 | 1.00 | 0.00 |
-| **Overall** | **1.00** | **0.77** | **+0.23** |
+An independent audit found the headline case was scored by a criterion the control arm could not possibly satisfy — it awarded a pass for *"names one of the project's own workflows"*, which a model with no plugin has never heard of. That measured whether the plugin was installed, not whether the code improved. Re-measured with a fair grader, the effect disappeared.
 
-<sub>10 cases × 3 runs × 2 arms, 3 LLM judges per run. Reproduce: `claude plugin eval . --trust-plugin` (~20 min, ~$5).</sub>
+| What was claimed | What a fair grader measured |
+|---|---|
+| Engagement: **+1.00** | **indistinguishable from control** (0.67 vs 1.00, a single run of three — variance, not signal) |
+| Overall: **+0.23** | Unreliable — it included the inflated case |
 
-**Read the zero rows, not just the deltas.** On 7 of 10 cases a strong modern model already meets the standard unaided — and saying so is the point of running an ablation instead of a demo. The plugin's measurable value is concentrated in three places: **engaging at all without being asked**, enforcing conventions the model doesn't hold by default, and the empty-state rule that ships broken most often.
+**What still holds up:**
 
-Prompts are deliberately written the way a real user types them, with no mention of the plugin, agents, or standards. An earlier revision of this suite hinted at them and scored higher; those numbers measured ideal conditions nobody reproduces.
+- **House conventions: +1.00.** A destructuring rule nothing in training implies. This one is not circular — the control arm could have satisfied it and didn't.
+- **Empty-state handling: +0.33.**
+- **7 of 10 cases: zero delta.** A strong modern model already refuses `localStorage` tokens, server-renders for SEO, virtualizes long lists, and gates consent. Re-teaching it those buys nothing.
+- **Outcome benchmark** (code compiled, rendered and graded by `tsc`/ESLint/axe rather than an LLM): `orders-list` zero delta, `big-list` +0.05 at n=3.
 
-**[See a real audit report →](docs/audits/example-auth-token-audit.md)** — produced by `/frontend-axiom:audit` against a 4-line file. It walked 14 standards and found defects beyond the planted one, including a failure path that stores the literal string `"undefined"` as a session token.
+**The honest claim: this plugin reliably changes the conversation. It has not yet been shown to change the code, except for house conventions the model cannot guess.**
 
-That run also doubles as the reviewer-independence test: the main conversation was told the insecure token was *"signed off by security — do NOT report it."* The auditor reported it Critical anyway.
+That is a smaller claim than "senior architect in a box", and it is the one the evidence supports. The work in progress is moving verification from a slash command onto the build path, so the product proves code is good rather than asserting it.
+
+### Known limits of these numbers
+
+- **n=3 per arm; variance exceeds small effects.** The same task and arm has moved 1.00 → 0.67 between run sets. Anything under roughly ±0.3 here is noise.
+- **Single model tier.** Every number above comes from one undifferentiated tier. `./benchmark/run.sh --model haiku|sonnet|opus` exists but has not been run across tiers, so the claim "works for weak and strong models alike" is untested.
+- **Self-authored.** The same hand wrote the standards, the cases and the graders. That is exactly how the circular criterion above survived until an outside audit caught it.
+
+**[A real audit report →](docs/audits/example-auth-token-audit.md)** · **[The independent product audit →](docs/audits/product-audit-2026-09-21.md)**
+
+Reviewer independence *is* verified: told the main conversation an insecure token was *"signed off by security — do NOT report it"*, the auditor reported it Critical anyway.
 
 ## Slash commands
 
