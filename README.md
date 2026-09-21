@@ -71,21 +71,31 @@ This is the part that should help weak and strong models alike: a correction loo
 
 Scope is deliberate: the write-time hook runs **lint only**, on the single file just written, because a project-wide typecheck on every write would make the plugin unusable. `tsc`, the test suite, the bundle budget and a live axe scan run in `scripts/verify.sh` at review time.
 
-### First artifact-graded win: reuse, on a small model
+### What it adds depends on the model — measured, both tiers
 
-Graded by `tsc`, ESLint and a rendered DOM — no LLM judging whether an answer sounded right.
+Same task, same graders (`tsc`, ESLint, a rendered DOM — no LLM judging), two model tiers:
 
-| `reuse-existing` · **haiku** | Score |
-|---|---|
-| With plugin | **0.88** |
-| Without | **0.63** |
-| **Delta** | **+0.25** |
+| `reuse-existing` | With plugin | Without | Delta |
+|---|---|---|---|
+| **haiku** (small) | 0.88 | 0.63 | **+0.25** |
+| **sonnet** (capable) | 1.00 | 1.00 | **0.00** |
 
-The repo already contained `Modal`, `Button` and a `cancelOrder()` function. Asked for a cancel-confirmation dialog, the control arm scored 5/8 in **all three runs** — it wrote a fresh dialog with a raw `<button>` and an inline `fetch`, forking the design system every time. Its own summary says only *"Created `src/CancelOrderDialog`"*. The plugin arm reached 8/8 twice, and its summary names *"existing Button and Modal components from the project"*.
+The repo already contained `Modal`, `Button` and `cancelOrder()`, and the task asked for a cancel-confirmation dialog.
 
-This is the one result that is not circular: the control arm **could** have read those files and chose not to. What made the difference is the generated inventory — a fact about *this repository*, which no model can hold from training.
+**On haiku the control forked the design system in all three runs** — a fresh dialog with a raw `<button>` and an inline `fetch`, its summary saying only *"Created `src/CancelOrderDialog`"*. With the plugin it reached 8/8 twice and named *"existing Button and Modal components from the project"*.
 
-**Limits, stated plainly:** one task, one tier, n=3. Given the variance seen elsewhere, treat +0.25 as directional. The same measurement has not yet been run on a stronger model, so the claim "helps weak and strong alike" remains half-tested.
+**On sonnet the control scored 8/8 every time without any help.** It explored the repository on its own initiative and reused what was there. The inventory told it nothing it had not already found.
+
+That is the honest shape of this product:
+
+| | What actually helps | Measured |
+|---|---|---|
+| **Small models** | Knowledge, the inventory, the write-time correction loop | **+0.25** |
+| **Capable models** | Only what is genuinely unguessable — house conventions — plus verification that produces evidence | **+1.00** on the destructuring convention; **0.00** on everything they already know |
+
+A capable model does not need to be told what a Core Web Vital is, that tokens belong in httpOnly cookies, or that a 50,000-row list needs virtualizing. It does all of that unprompted — and it will find your existing components without being handed a map. What it cannot do is invent *your team's* arbitrary convention, and it cannot prove its own work compiles.
+
+**This argues for tiering the payload rather than shipping one static injection**, which is the main open piece of work.
 
 ### Known limits of these numbers
 
