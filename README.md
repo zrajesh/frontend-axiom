@@ -71,6 +71,22 @@ This is the part that should help weak and strong models alike: a correction loo
 
 Scope is deliberate: the write-time hook runs **lint only**, on the single file just written, because a project-wide typecheck on every write would make the plugin unusable. `tsc`, the test suite, the bundle budget and a live axe scan run in `scripts/verify.sh` at review time.
 
+### First artifact-graded win: reuse, on a small model
+
+Graded by `tsc`, ESLint and a rendered DOM — no LLM judging whether an answer sounded right.
+
+| `reuse-existing` · **haiku** | Score |
+|---|---|
+| With plugin | **0.88** |
+| Without | **0.63** |
+| **Delta** | **+0.25** |
+
+The repo already contained `Modal`, `Button` and a `cancelOrder()` function. Asked for a cancel-confirmation dialog, the control arm scored 5/8 in **all three runs** — it wrote a fresh dialog with a raw `<button>` and an inline `fetch`, forking the design system every time. Its own summary says only *"Created `src/CancelOrderDialog`"*. The plugin arm reached 8/8 twice, and its summary names *"existing Button and Modal components from the project"*.
+
+This is the one result that is not circular: the control arm **could** have read those files and chose not to. What made the difference is the generated inventory — a fact about *this repository*, which no model can hold from training.
+
+**Limits, stated plainly:** one task, one tier, n=3. Given the variance seen elsewhere, treat +0.25 as directional. The same measurement has not yet been run on a stronger model, so the claim "helps weak and strong alike" remains half-tested.
+
 ### Known limits of these numbers
 
 - **n=3 per arm; variance exceeds small effects.** The same task and arm has moved 1.00 → 0.67 between run sets. Anything under roughly ±0.3 here is noise.
