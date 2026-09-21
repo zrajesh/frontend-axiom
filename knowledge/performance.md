@@ -12,10 +12,7 @@ These three — and only these three — are Google's Core Web Vitals. Don't rep
 
 ## Other key metrics (diagnostic, not CWV)
 
-| Metric | Good | Meaning |
-|---|---|---|
-| **FCP** (First Contentful Paint) | ≤ 1.8s | Something rendered |
-| **TTFB** (Time to First Byte) | ≤ 0.8s | Server responsiveness |
+FCP ≤ 1.8s · TTFB ≤ 0.8s. Useful for diagnosis; do not report them as Core Web Vitals.
 
 ## Test on the device your users actually have
 

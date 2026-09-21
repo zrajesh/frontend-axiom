@@ -41,6 +41,19 @@ jobs:
           claude plugin validate .claude-plugin/plugin.json --strict
           claude plugin validate .claude-plugin/marketplace.json --strict
 
+      - name: Every knowledge file is reachable from the hook
+        run: |
+          python3 - <<'EOF'
+          import re, os, sys
+          listed = set(re.findall(r'\{KNOWLEDGE\}/([a-z-]+\.md)', open('hooks/inject-standards.py').read()))
+          actual = {f for f in os.listdir('knowledge') if f.endswith('.md') and f != 'README.md'}
+          orphaned = sorted(actual - listed)
+          missing  = sorted(listed - actual)
+          if orphaned: print('Not routed from the hook (agents will never find these):', orphaned)
+          if missing:  print('Hook points at files that do not exist:', missing)
+          sys.exit(1 if (orphaned or missing) else 0)
+          EOF
+
       - name: Referenced knowledge files exist
         run: |
           missing=0
