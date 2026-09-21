@@ -38,6 +38,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - The benchmark is self-authored: same author wrote the standards, the cases, and the graders. Independent cases would be worth more than more self-written ones.
 - Never used to build a real production feature end to end. `pixel-check` has not been run against a real Figma file.
 
+## [0.3.0] — 2026-09-21
+
+Centre of gravity moved from *telling the model things* to *checking what it wrote*, because the ablation said the first one does nothing.
+
+### Added
+
+- **`hooks/verify-on-write.py`** — a `PostToolUse` hook. The agent's own linter runs on each file it writes and real errors come straight back, so it cannot call a broken file done. Lint only, single file, silent when it has nothing to say, bounded to 3 blocks so it can never wedge a session.
+- **`hooks/inject-standards.py`** — a `UserPromptSubmit` hook making engagement deterministic instead of depending on the model choosing to invoke a skill.
+- **`scripts/scan-project.py`** — generates `.frontend-axiom/inventory.md`: the components, props, hooks, endpoints and design tokens *this repo already has*. Injected automatically when present.
+- **`scripts/verify.sh`** — executable gates: typecheck, lint + `jsx-a11y`, tests, bundle budget, live axe. A gate that cannot run reports SKIP, never PASS.
+- **`benchmark/`** — outcome harness where the graders are `tsc`, ESLint and a rendered DOM rather than an LLM judging whether an answer sounded right. Supports `--model` for tier comparison and `existing/` fixtures for measuring reuse.
+- Four knowledge domains: `auth.md`, `lists-and-pagination.md`, `i18n.md`, `privacy-compliance.md`; low-end device/network profile in `performance.md`.
+
+### Changed
+
+- **The house rule ships at `error`, not `warn`.** At `warn` the plugin's own gate could never enforce the one convention it measurably adds.
+- **"Never guess" became "look first, then ask."** The old wording made the agent stall on questions the repository already answered — it cost three benchmark runs before the rule, rather than the prompts, was identified as the cause.
+- `knowledge/README.md` records the editorial rule: decisions, thresholds and traps — never explanations of concepts the model already holds.
+
+### Measured
+
+| | With | Without | Delta |
+|---|---|---|---|
+| reuse-existing · haiku | 0.88 | 0.63 | **+0.25** |
+| reuse-existing · sonnet | 1.00 | 1.00 | 0.00 |
+| house convention (destructuring) | 1.00 | 0.00 | **+1.00** |
+| 7 of 10 generic-standard cases | — | — | 0.00 |
+
+A capable model already meets the generic standards and finds existing components unaided. What it cannot do is invent your team's arbitrary convention, or prove its own work compiles.
+
+### Fixed
+
+- A **circular grader** inflated the previously published headline: it awarded a pass for naming plugin commands the control arm had never been told existed. Re-measured fairly, that effect disappeared. README corrected rather than quietly adjusted.
+- Bundle gate compared **raw** bytes to a **compressed** budget (3–4× overstated).
+- Benchmark scored rate-limited runs as `0`, which once manufactured a `+0.45` delta out of an outage. Invalid runs are now excluded; a missing artifact is scored as a real failure.
+
 ## [0.2.0] — 2026-09-18
 
 ### Added
