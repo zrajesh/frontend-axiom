@@ -48,7 +48,20 @@ Then register it in whichever config style the project actually uses — **check
   ```
 - Legacy (`.eslintrc.*`): `extends: ["plugin:frontend-axiom/legacy-recommended"]`
 
-Leave it at `"warn"` initially. On an existing codebase it will light up a lot at first — that's expected, and is signal for `/frontend-axiom:audit` to triage, not a reason to mass-rewrite files during init.
+The shipped config sets the house rule to **`error`**, so it actually gates — a rule that can only warn is decoration, and `${CLAUDE_PLUGIN_ROOT}/knowledge/release-operations.md` forbids leaving one there.
+
+On an **existing** codebase that will light up immediately. Stage it rather than mass-rewriting during init:
+
+```js
+// eslint.config.js — adopt gradually, then delete this override
+const frontendAxiom = require("eslint-plugin-frontend-axiom");
+module.exports = [
+  frontendAxiom.configs.recommended,
+  { rules: { "frontend-axiom/no-repeated-property-access": "warn" } }, // TODO: remove
+];
+```
+
+Record who owns removing that override and by when. An override with no owner is permanent.
 
 ## Step 3 — record the decision
 

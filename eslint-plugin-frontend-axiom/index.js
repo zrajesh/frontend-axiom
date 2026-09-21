@@ -3,9 +3,13 @@
 const noRepeatedPropertyAccess = require("./rules/no-repeated-property-access");
 
 const RULES = {
-  "frontend-axiom/no-repeated-property-access": "warn",
+  // "error", not "warn". This is the one convention the benchmark measured as
+  // genuinely differentiated, and verify.sh fails only on errorCount — at
+  // "warn" the plugin's own gate could never enforce its own headline rule.
+  // knowledge/release-operations.md forbids a permanently-warning rule.
+  "frontend-axiom/no-repeated-property-access": "error",
   "prefer-destructuring": [
-    "warn",
+    "error",
     {
       VariableDeclarator: { array: false, object: true },
       AssignmentExpression: { array: false, object: false },

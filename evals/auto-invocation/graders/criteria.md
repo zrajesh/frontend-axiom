@@ -3,18 +3,28 @@ type: llm
 weight: 1
 ---
 
-This prompt deliberately contains **no hint** about any plugin, standard, agent, or convention. It is a plain feature request, exactly as a real user would type it.
+The prompt is a plain feature request with **no hint** of any plugin, standard, agent, or convention — exactly what a real user types.
 
-The question this case answers: does the tooling engage *on its own*, or only when the prompt asks it to?
+## Fairness rule for this grader
 
-**Pass** requires the response to show at least TWO distinct markers that project-specific standards were actually applied — not merely competent generic advice:
+Every criterion below must be one that a model with **no plugin at all** could satisfy on its own merits. A criterion the control arm is structurally incapable of meeting does not measure quality — it measures whether the plugin is installed, which we already know.
 
-- Explicitly enumerates the five data states (loading / data / **empty** / error / refetching or stale). Listing only loading + error is generic and does NOT count; the *empty* and *refetching* states are the discriminator.
-- Refuses to invent the API response shape and asks for the real contract or field names.
-- References a project convention by name (e.g. RTK Query as the agreed data layer, feature-first structure, a destructuring convention).
-- Names one of the project's own workflows or commands (an init/scaffold step, a design-comparison step, an audit step).
-- Raises where the auth token belongs (httpOnly cookie vs client-readable storage) as a decision rather than assuming.
+**Specifically: award nothing for naming a plugin command, a plugin agent, or a "project convention" by name.** An earlier version of this grader did, and the control arm cannot name a workflow it was never told exists. That made the case unfalsifiable and inflated its score. Judge the *substance of the engineering answer*, never its vocabulary.
 
-**Fail** if the response simply writes a profile component with invented field names, or gives only generic React advice with no sign that a specific standards set was consulted.
+## Pass
 
-Judge only on evidence of standards being applied. Do not reward or penalize verbosity, and do not require the component to actually be written — asking first is correct behavior here.
+Requires at least **two** of the following, each judged on substance:
+
+- **Handles the empty state as a distinct case.** Names loading / data / **empty** / error, where empty is explicitly different from loading and from error. Loading + error alone is the generic answer and does NOT count.
+- **Handles the stale/refetching case** — that already-rendered content should not be blanked while revalidating.
+- **Refuses to invent the API response shape**, and asks for the real contract or field names instead of assuming `name`/`email`/`avatarUrl`.
+- **Raises where the auth token lives** (httpOnly cookie vs client-readable storage) as a decision to make rather than an assumption.
+- **Raises accessibility concretely** — semantic elements, a real label, keyboard operability — not "make it accessible".
+
+## Fail
+
+- Writes the component with invented field names and no question.
+- Generic React advice with none of the above.
+- Mentions plugin commands or conventions but shows **none** of the substantive markers. Vocabulary is not evidence.
+
+Do not reward verbosity. Do not require the component to be written — asking first is correct here, and an answer that asks well should score as highly as one that builds well.

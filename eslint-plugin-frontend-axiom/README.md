@@ -105,4 +105,8 @@ Runs the rule against ESLint's official `RuleTester` (8 valid + 3 invalid cases)
 
 ## Status
 
-v0.2. Rule logic is covered by a 20-case `RuleTester` suite (including regression tests for every false negative found in v0.1) and verified end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project. It is still a **heuristic**, not type-aware analysis — start it at `"warn"`, tune `ignore`/`threshold` against your codebase, then promote it to `"error"` once the warning count reaches zero (`knowledge/release-operations.md`).
+v0.3. Rule logic is covered by a 20-case `RuleTester` suite (including regression tests for every false negative found in v0.1) and verified end-to-end through the `eslint` CLI in a real ESLint 9 flat-config project.
+
+`configs.recommended` ships the rule at **`error`**. It previously shipped at `"warn"`, which meant `scripts/verify.sh` — which fails on `errorCount` — could never enforce the one convention this plugin measurably adds. Adopting on an existing codebase? Override to `"warn"` locally with an owner and a removal date, rather than weakening the shipped default for everyone.
+
+It remains a **heuristic**, not type-aware analysis. Tune `ignore`/`threshold` against your codebase.

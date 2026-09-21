@@ -116,17 +116,29 @@ fi
 
 # ------------------------------------------------------------------- bundle
 if [[ -d .next ]]; then
-  # Sum the client JS actually shipped. Approximate but consistent run to run.
-  bytes=$(find .next/static/chunks -name '*.js' -not -name '*.map' -exec cat {} + 2>/dev/null | wc -c | tr -d ' ')
+  # The budget in knowledge/performance.md is COMPRESSED bytes — that is what
+  # crosses the wire. Summing raw bytes overstates by roughly 3-4x and fails
+  # projects that are comfortably within budget, so compress before comparing.
+  if command -v gzip >/dev/null 2>&1; then
+    bytes=$(find .next/static/chunks -name '*.js' -not -name '*.map' -exec cat {} + 2>/dev/null \
+            | gzip -c 2>/dev/null | wc -c | tr -d ' ')
+    unit="KB gzipped"
+  else
+    bytes=""
+  fi
   if [[ "${bytes:-0}" -gt 0 ]]; then
     kb=$((bytes/1024))
     if [[ "$kb" -gt "$BUDGET_KB" ]]; then
-      row bundle FAIL "${kb}KB raw client JS > ${BUDGET_KB}KB budget"
+      row bundle FAIL "${kb}${unit} client JS > ${BUDGET_KB}KB budget"
     else
-      row bundle PASS "${kb}KB raw client JS (budget ${BUDGET_KB}KB)"
+      row bundle PASS "${kb}${unit} client JS (budget ${BUDGET_KB}KB)"
     fi
+    # Honest about what this is: all chunks concatenated, not per-route
+    # first-load. Good for catching regressions, not a substitute for
+    # `next build`'s own per-route table.
+    echo "    note: all chunks combined — see \`next build\` output for per-route first-load"
   else
-    row bundle SKIP "no chunks found under .next/static"
+    row bundle SKIP "no chunks found under .next/static, or gzip unavailable"
   fi
 else
   row bundle SKIP "no build output — run the production build first"
