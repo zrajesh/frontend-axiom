@@ -101,21 +101,54 @@ build), :audit (independent review), :pixel-check (Figma diff), :learn-guide (in
 </frontend-axiom-standards>"""
 
 
+def project_inventory(cwd: str) -> str:
+    """Point at this project's generated inventory, if one exists.
+
+    This is the part a model cannot know from training: which components,
+    hooks and endpoints this repository already has. Benchmarking showed the
+    model already meets the generic standards above, so the inventory is where
+    the real leverage is — it stops the agent writing a ninth Button.
+    """
+    path = os.path.join(cwd or ".", ".frontend-axiom", "inventory.md")
+    if not os.path.isfile(path):
+        return ""
+    try:
+        head = open(path, encoding="utf-8").read(400)
+    except OSError:
+        return ""
+    counts = " ".join(re.findall(r"##\s+(Components|Hooks|API endpoints)\s+\(\d+\)", head)) or ""
+    return f"""
+
+THIS PROJECT'S INVENTORY — READ IT BEFORE CREATING ANYTHING:
+  {path}
+It lists the components, hooks, API endpoints and design tokens that already
+exist here. {counts}
+- Reuse or extend what is listed. Do NOT write a second component that does an
+  existing one's job.
+- Use the endpoint names and field names exactly as listed. If what you need
+  is not there, ASK — do not invent it.
+- Use the listed design tokens rather than hardcoding values.
+If it looks stale, regenerate: python3 {PLUGIN_ROOT}/scripts/scan-project.py"""
+
+
 def main() -> int:
     raw = sys.stdin.read()
     try:
-        prompt = (json.loads(raw) or {}).get("prompt", "")
+        payload = json.loads(raw) or {}
     except (json.JSONDecodeError, AttributeError):
-        prompt = raw  # tolerate a non-JSON stdin rather than failing the turn
+        payload = {}
+    prompt = payload.get("prompt", raw if isinstance(raw, str) else "")
 
     if not prompt or not TRIGGER.search(prompt):
         return 0  # not frontend work — inject nothing, cost nothing
+
+    context = CONTEXT + project_inventory(payload.get("cwd") or os.getcwd())
 
     json.dump(
         {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
-                "additionalContext": CONTEXT,
+                "additionalContext": context,
             }
         },
         sys.stdout,

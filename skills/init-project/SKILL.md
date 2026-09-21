@@ -58,7 +58,19 @@ Write or update the project's root `CLAUDE.md` with a short "Stack" section reco
 
 Before generating any scaffold code, read `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/react-nextjs.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/css.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/state-data.md`, and any other file in `knowledge/` relevant to this project so the initial structure already follows them (feature-first folders, destructuring convention, 5-state data handling, etc).
 
-## Step 5 — establish the baselines that are expensive to retrofit
+## Step 5 — build the project inventory
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan-project.py"
+```
+
+Writes `.frontend-axiom/inventory.md`: every component, hook, API endpoint and design token this repo already has. From then on it is injected automatically on every frontend prompt.
+
+This is the highest-value step on an existing codebase, and it is worth understanding why. Benchmarking this plugin showed a strong model already satisfies the generic standards unaided — a zero delta on most cases. What it cannot know is *your* repository: that a `<Button>` with a `variant` prop already exists, that the endpoint is `refundOrder` and not `refundPayment`. That gap is permanent, and it is where an agent actually goes wrong.
+
+Regenerate it whenever components or endpoints are added. Mention it in the project's `CLAUDE.md` so the team knows to keep it fresh.
+
+## Step 6 — establish the baselines that are expensive to retrofit
 
 Scaffold time is the cheapest moment to set these up, and the hardest to add later once hundreds of files exist. Set up each one, or explicitly tell the user which you skipped and why:
 
