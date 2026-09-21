@@ -6,6 +6,14 @@
           { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/inject-standards.py" }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/verify-on-write.py" }
+        ]
+      }
     ]
   }
 }

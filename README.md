@@ -53,9 +53,23 @@ An independent audit found the headline case was scored by a criterion the contr
 - **7 of 10 cases: zero delta.** A strong modern model already refuses `localStorage` tokens, server-renders for SEO, virtualizes long lists, and gates consent. Re-teaching it those buys nothing.
 - **Outcome benchmark** (code compiled, rendered and graded by `tsc`/ESLint/axe rather than an LLM): `orders-list` zero delta, `big-list` +0.05 at n=3.
 
-**The honest claim: this plugin reliably changes the conversation. It has not yet been shown to change the code, except for house conventions the model cannot guess.**
+**The honest claim: injecting standards into a capable model changes the conversation, not the code.** Every ablation says so. That is why the product's centre of gravity has moved from telling to checking.
 
-That is a smaller claim than "senior architect in a box", and it is the one the evidence supports. The work in progress is moving verification from a slash command onto the build path, so the product proves code is good rather than asserting it.
+### Verification runs on the build path, not behind a command
+
+When the agent writes a source file, its own linter runs on that file and real errors go straight back to it. It cannot call the file done while it is broken.
+
+```
+agent writes Profile.tsx
+  → hook lints it → 3 errors → returned to the agent
+  → agent fixes → re-lints → clean → done
+```
+
+Measured on a real run: asked for a clickable profile card, the agent shipped leaf-value destructuring, `role="button"` with `tabIndex` and an Enter/Space handler, and real `alt` text — finishing at **0 lint errors**. It also noticed the project's ESLint config was missing a TypeScript parser, so `.tsx` files were silently not being parsed, and fixed that too.
+
+This is the part that should help weak and strong models alike: a correction loop transfers capability in a way a longer prompt does not. A model that writes a type error is told the exact error and fixes it; a model that already knows the standards still gets its work checked instead of assumed. That claim is **not yet measured across model tiers** — see the limits below.
+
+Scope is deliberate: the write-time hook runs **lint only**, on the single file just written, because a project-wide typecheck on every write would make the plugin unusable. `tsc`, the test suite, the bundle budget and a live axe scan run in `scripts/verify.sh` at review time.
 
 ### Known limits of these numbers
 
