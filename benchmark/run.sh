@@ -12,18 +12,24 @@
 #   control   = installed plugin disabled, no plugin at all
 # Both verified: treatment sees the standards, control does not.
 #
-# Usage: run.sh [--runs N] [--task NAME] [--keep]
+# Usage: run.sh [--runs N] [--task NAME] [--keep] [--model haiku|sonnet|opus]
+#
+# --model matters more than it looks. A top-tier model already knows most of
+# these standards, so the plugin can only add engagement and house-specific
+# facts. A smaller model does not know them, so the same injection may be the
+# whole value. A single number averaged across tiers hides both effects.
 
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BENCH="$ROOT/benchmark"
 TEMPLATE="$BENCH/.template/node_modules"
-RUNS=3; ONLY=""; KEEP=0
+RUNS=3; ONLY=""; KEEP=0; MODEL=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --runs) RUNS="$2"; shift 2 ;;
     --task) ONLY="$2"; shift 2 ;;
     --keep) KEEP=1; shift ;;
+    --model) MODEL="$2"; shift 2 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -70,7 +76,8 @@ score_run() {
   echo "$passed $total"
 }
 
-echo "=== OUTCOME BENCHMARK · $RUNS run(s)/arm · $STAMP ==="
+echo "=== OUTCOME BENCHMARK · $RUNS run(s)/arm · model=${MODEL:-default} · $STAMP ==="
+echo "${MODEL:-default}" > "$OUT/model.txt"
 printf '%-16s %-10s %-8s %s\n' TASK ARM SCORE DETAIL
 SUMMARY="$OUT/summary.tsv"; : > "$SUMMARY"
 INVALID_TOTAL=0
@@ -85,15 +92,22 @@ for TASKDIR in "$BENCH/tasks"/*/; do
     for i in $(seq 1 "$RUNS"); do
       D="$WORK/$TASK-$ARM-$i"; mkdir -p "$D/src"
       cp -R "$TASKDIR/seed/." "$D/" 2>/dev/null
+      # An existing codebase, when the task ships one. This is what lets a task
+      # measure reuse — whether the agent extends what is there or writes a
+      # second component that does the same job.
+      if [[ -d "$TASKDIR/existing" ]]; then
+        cp -R "$TASKDIR/existing/." "$D/" 2>/dev/null
+        python3 "$ROOT/scripts/scan-project.py" "$D" >/dev/null 2>&1
+      fi
       cp "$BENCH/template-package.json" "$D/package.json"
       ln -s "$TEMPLATE" "$D/node_modules"
 
       if [[ "$ARM" == "treatment" ]]; then
-        (cd "$D" && claude --plugin-dir "$ROOT" \
+        (cd "$D" && claude --plugin-dir "$ROOT" ${MODEL:+--model "$MODEL"} \
             --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Skill" "Task" "Agent" \
             -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
       else
-        (cd "$D" && claude \
+        (cd "$D" && claude ${MODEL:+--model "$MODEL"} \
             --allowedTools "Read" "Write" "Edit" "Glob" "Grep" \
             -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
       fi

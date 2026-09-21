@@ -39,6 +39,30 @@ rather than a number.
 
 A grader that cannot fail bad code is worthless.
 
+## Model tier matters, and a single number hides it
+
+```bash
+./benchmark/run.sh --model haiku    # smaller model
+./benchmark/run.sh --model sonnet
+./benchmark/run.sh --model opus     # top tier
+```
+
+A top-tier model already knows most of these standards, so the plugin can only
+add engagement and project-specific facts. A smaller model does not know them,
+so the same injection may be the whole value — while also consuming a larger
+share of a smaller context budget. **Averaging across tiers hides both effects.**
+Always report the delta per model, never pooled.
+
+## Tasks that ship an existing codebase
+
+A task directory may contain `existing/`, copied in before the agent runs, with
+the inventory generated from it automatically. This is what lets a task measure
+**reuse** — the thing single-file tasks structurally cannot see. `reuse-existing`
+seeds a repo that already has `Modal`, `Button` and a `cancelOrder()` API, then
+asks for a cancel-confirmation dialog. Composing what exists scores 8/8; writing
+a fresh dialog with a raw `<button>` and an inline `fetch` scores 3/8 — code that
+works in isolation and quietly forks the design system.
+
 ## Findings so far
 
 | Task | Treatment | Control | Delta | Read |
