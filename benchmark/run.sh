@@ -114,12 +114,28 @@ for TASKDIR in "$BENCH/tasks"/*/; do
       # A run that never happened is not a zero — scoring it as one lets a
       # rate limit or a crash manufacture a delta out of nothing.
       LOG="$OUT/$TASK-$ARM-$i.log"
-      produced=$(ls "$D/src" 2>/dev/null | wc -l | tr -d ' ')
-      if grep -qiE "usage limit|session limit|Not logged in|rate.?limit|API Error" "$LOG" 2>/dev/null \
-         || [[ "${produced:-0}" -eq 0 ]]; then
+      # Infrastructure failure = INVALID (excluded). The agent declining to
+      # produce the artifact is a REAL failure and must be scored as one.
+      # Note src/ is pre-populated when a task ships existing/, so "src is
+      # empty" cannot detect a missing artifact — declare it per task instead.
+      EXPECT=""
+      [[ -f "$TASKDIR/expect_file" ]] && EXPECT=$(cat "$TASKDIR/expect_file")
+      if [[ -n "$EXPECT" ]]; then
+        [[ -f "$D/$EXPECT" ]] && produced=1 || produced=0
+      else
+        produced=$(ls "$D/src" 2>/dev/null | wc -l | tr -d ' ')
+      fi
+      if grep -qiE "usage limit|session limit|Not logged in|rate.?limit|API Error" "$LOG" 2>/dev/null; then
         why=$(grep -oiE "usage limit|session limit|Not logged in|rate.?limit|API Error" "$LOG" 2>/dev/null | head -1)
         arminvalid=$((arminvalid + 1)); INVALID_TOTAL=$((INVALID_TOTAL + 1))
         printf '%-16s %-10s %-8s %s\n' "$TASK" "$ARM#$i" "INVALID" "${why:-no file produced} — excluded"
+        continue
+      fi
+
+      if [[ "${produced:-1}" -eq 0 ]]; then
+        nspec=$(grep -c "^\s*test(" "$TASKDIR"/assert/*.* 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
+        armpass=$((armpass + 0)); armtotal=$((armtotal + 2 + ${nspec:-6}))
+        printf '%-16s %-10s %-8s %s\n' "$TASK" "$ARM#$i" "0/$((2 + ${nspec:-6}))" "did not produce $EXPECT — scored as failure"
         continue
       fi
 

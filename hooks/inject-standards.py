@@ -54,8 +54,12 @@ CONTEXT = f"""\
 Frontend Axiom is ACTIVE. Apply these without being asked. They override generic habits.
 
 NON-NEGOTIABLE:
-1. NEVER GUESS. If the API shape, field names, requirements, or stack are unclear, ASK
-   before writing code. Inventing a response shape is a defect, not a head start.
+1. LOOK FIRST, THEN ASK. Never invent an API shape, field name, or endpoint — but do not
+   ask for something the repository already answers. Order: check the inventory below,
+   grep the codebase, read the types. ASK only for what genuinely is not discoverable
+   (a product decision, an endpoint that does not exist yet, an ambiguous requirement).
+   Stalling on a question the code already answers wastes the user's turn as surely as
+   guessing wrong does.
 2. EVERY data-fetching surface handles five states: loading / data / EMPTY (visually
    distinct, not a blank list) / error (with retry) / refetching (don't blank stale UI).
 3. AUTH TOKENS live in httpOnly+Secure+SameSite cookies. NEVER localStorage or
