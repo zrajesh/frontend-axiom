@@ -39,6 +39,10 @@ row() { # name status detail
   return 0
 }
 
+have_tool() { # is the binary actually present, or would npx try to fetch it?
+  [[ -x "node_modules/.bin/$1" ]]
+}
+
 has_npm_script() { # does package.json define this npm script?
   [[ -f package.json ]] || return 1
   node -e "const s=(require('./package.json').scripts)||{};process.exit(s['$1']?0:1)" 2>/dev/null
@@ -49,7 +53,9 @@ echo "cwd: $(pwd)"
 echo
 
 # ---------------------------------------------------------------- typecheck
-if [[ -f tsconfig.json ]]; then
+if [[ -f tsconfig.json ]] && ! have_tool tsc; then
+  row typecheck SKIP "tsconfig.json present but typescript is not installed — run npm install"
+elif [[ -f tsconfig.json ]]; then
   if out=$(npx --no-install tsc --noEmit 2>&1); then
     row typecheck PASS "no type errors"
   else
@@ -65,8 +71,14 @@ fi
 shopt -s nullglob
 ESLINT_CFGS=(.eslintrc* eslint.config.*)
 shopt -u nullglob
-if [[ ${#ESLINT_CFGS[@]} -gt 0 ]]; then
-  json=$(npx --no-install eslint . -f json 2>/dev/null)
+if [[ ${#ESLINT_CFGS[@]} -gt 0 ]] && ! have_tool eslint; then
+  row lint SKIP "eslint config present but eslint is not installed — run npm install"
+  row a11y-lint SKIP "eslint not installed"
+elif [[ ${#ESLINT_CFGS[@]} -gt 0 ]]; then
+  # Pass explicit source globs. Flat config lints only **/*.js by default, so a
+  # bare `eslint .` silently inspects zero TS/TSX files and looks like a pass.
+  json=$(npx --no-install eslint . "**/*.{ts,tsx,js,jsx,mjs,cjs}" -f json 2>/dev/null)
+  [[ -z "$json" ]] && json=$(npx --no-install eslint . -f json 2>/dev/null)
   read -r nfiles errs warns <<<"$(node -e "
     let r=[]; try { r = JSON.parse(process.argv[1]||'[]'); } catch (e) {}
     const e = r.reduce((a,f)=>a+f.errorCount,0);
@@ -104,8 +116,11 @@ fi
 
 # -------------------------------------------------------------------- tests
 if has_npm_script test; then
-  if out=$(npm test --silent 2>&1); then
+  out=$(npm test --silent 2>&1); rc=$?
+  if [[ $rc -eq 0 ]]; then
     row tests PASS "suite green"
+  elif grep -qiE "command not found|Cannot find module|is not recognized" <<<"$out"; then
+    row tests SKIP "test script defined but its runner is not installed — run npm install"
   else
     row tests FAIL "suite failing"
     echo "$out" | tail -12 | sed 's/^/    /'
