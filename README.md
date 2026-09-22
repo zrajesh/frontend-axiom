@@ -37,23 +37,36 @@ claude
 
 ## Does it actually work?
 
-Honest answer, measured with an ablation: **less than this README previously claimed.**
+Measured with ablation — every case run with the plugin and again without it, graded by `tsc`, ESLint and a rendered DOM rather than an LLM judging whether an answer sounded right.
 
-An independent audit found the headline case was scored by a criterion the control arm could not possibly satisfy — it awarded a pass for *"names one of the project's own workflows"*, which a model with no plugin has never heard of. That measured whether the plugin was installed, not whether the code improved. Re-measured with a fair grader, the effect disappeared.
+**Six mechanisms tested on a capable model. Six nulls. One exception.**
 
-| What was claimed | What a fair grader measured |
+| Mechanism | Capable model (sonnet) |
 |---|---|
-| Engagement: **+1.00** | **indistinguishable from control** (0.67 vs 1.00, a single run of three — variance, not signal) |
-| Overall: **+0.23** | Unreliable — it included the inflated case |
+| Knowledge injection (7 generic-standard cases) | 0.00 |
+| Component reuse, 3-file repo | 0.00 |
+| Component reuse, 44 components with decoys | 0.00 |
+| Self-verification with a shell available | 0.00 |
+| Structural erosion across 4 checkpoints | +0.03 |
+| Inferred house conventions, counter-default | 0.00 |
+| **A convention that exists nowhere in the code** | **+1.00** |
 
-**What still holds up:**
+The pattern is consistent and, by now, well evidenced: **a capable model needs no help with anything it can derive.** Give it a task and a repository and it finds the components, infers the conventions, runs the tests, and meets the standards — whether or not this plugin is installed.
 
-- **House conventions: +1.00.** A destructuring rule nothing in training implies. This one is not circular — the control arm could have satisfied it and didn't.
-- **Empty-state handling: +0.33.**
-- **7 of 10 cases: zero delta.** A strong modern model already refuses `localStorage` tokens, server-renders for SEO, virtualizes long lists, and gates consent. Re-teaching it those buys nothing.
-- **Outcome benchmark** (code compiled, rendered and graded by `tsc`/ESLint/axe rather than an LLM): `orders-list` zero delta, `big-list` +0.05 at n=3.
+The single exception is the one fact that could not be derived: a rule written in a document and demonstrated nowhere in the codebase. When the same kind of rule was *demonstrated* by twelve example files, the control arm inferred it by reading them and the delta vanished.
 
-**The honest claim: injecting standards into a capable model changes the conversation, not the code.** Every ablation says so. That is why the product's centre of gravity has moved from telling to checking.
+So the boundary is sharper than "arbitrary conventions": **delta requires information absent from training *and* absent from the repository.** That is a short list — decisions not yet expressed in code, deliberate exceptions, rules for new code that differ from old, things the team tried and rejected.
+
+### Where it does help
+
+| | Measured |
+|---|---|
+| **Smaller models** (haiku) | **+0.25** — reuse, standards, the correction loop all land |
+| **Capable models** | Undocumented rules **+1.00** · everything derivable **0.00** |
+
+Smaller models genuinely benefit. On a 3-file repo the haiku control forked the design system in every run, writing a fresh dialog with a raw `<button>` and an inline `fetch`; with the plugin it composed what was there.
+
+**The honest claim: this raises the floor, it does not raise the ceiling.** It helps weaker models behave like stronger ones, and it enforces decisions a strong model has no way to know. It does not make a capable model better at frontend work, and six experiments say nothing along that axis is likely to.
 
 ### Verification runs on the build path, not behind a command
 
