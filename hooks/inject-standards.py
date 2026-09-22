@@ -113,13 +113,31 @@ def project_inventory(cwd: str) -> str:
     model already meets the generic standards above, so the inventory is where
     the real leverage is — it stops the agent writing a ninth Button.
     """
-    path = os.path.join(cwd or ".", ".frontend-axiom", "inventory.md")
+    base = os.path.join(cwd or ".", ".frontend-axiom")
+    conv = os.path.join(base, "conventions.md")
+    conv_block = ""
+    if os.path.isfile(conv):
+        try:
+            rows = [l for l in open(conv, encoding="utf-8").read().splitlines()
+                    if l.startswith("| ") and "**" in l]
+        except OSError:
+            rows = []
+        if rows:
+            conv_block = (
+                "\n\nTHIS REPO'S OWN CONVENTIONS — inferred from its code, follow them:\n"
+                + "\n".join("  " + r for r in rows[:10])
+                + f"\n  (full detail, including dissenting files: {conv})"
+                + "\nThese are arbitrary team choices, not derivable from the task. Where a "
+                  "file disagrees it is the exception, not the licence."
+            )
+
+    path = os.path.join(base, "inventory.md")
     if not os.path.isfile(path):
-        return ""
+        return conv_block
     try:
         head = open(path, encoding="utf-8").read(400)
     except OSError:
-        return ""
+        return conv_block
     counts = " ".join(re.findall(r"##\s+(Components|Hooks|API endpoints)\s+\(\d+\)", head)) or ""
     return f"""
 
@@ -132,7 +150,7 @@ exist here. {counts}
 - Use the endpoint names and field names exactly as listed. If what you need
   is not there, ASK — do not invent it.
 - Use the listed design tokens rather than hardcoding values.
-If it looks stale, regenerate: python3 {PLUGIN_ROOT}/scripts/scan-project.py"""
+If it looks stale, regenerate: python3 {PLUGIN_ROOT}/scripts/scan-project.py""" + conv_block
 
 
 def main() -> int:

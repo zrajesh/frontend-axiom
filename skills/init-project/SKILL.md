@@ -74,8 +74,11 @@ Before generating any scaffold code, read `${CLAUDE_PLUGIN_ROOT}/knowledge/princ
 ## Step 5 — build the project inventory
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan-project.py"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan-project.py"        # what exists
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/extract-conventions.py" # how this team writes it
 ```
+
+The second one matters most on an existing repo. Ablation measured ~zero delta on everything a capable model can derive — standards, reuse, even self-verification — and **+1.00 on an arbitrary house convention**, because that answer exists nowhere in training. `extract-conventions.py` infers this repository's own arbitrary choices (export style, import style, props declaration, styling, test location) and only reports those above 80% consistency, since a false rule makes an agent "fix" correct code.
 
 Writes `.frontend-axiom/inventory.md`: every component, hook, API endpoint and design token this repo already has. From then on it is injected automatically on every frontend prompt.
 
