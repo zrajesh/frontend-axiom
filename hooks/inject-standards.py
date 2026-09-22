@@ -19,6 +19,7 @@ Design constraints:
 import json
 import os
 import re
+import subprocess
 import sys
 
 PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -105,6 +106,30 @@ build), :audit (independent review), :pixel-check (Figma diff), :learn-guide (in
 </frontend-axiom-standards>"""
 
 
+def team_decisions(cwd: str, prompt: str) -> str:
+    """Decisions that exist nowhere in the code — the one measured +1.00.
+
+    Six ablations found ~zero delta on everything a capable model can derive.
+    The exception was a rule present only in a document; when the same kind of
+    rule was demonstrated by example files, the model inferred it by reading
+    and the delta vanished. So this surfaces only what the repository cannot
+    tell it, matched by keyword and path so a team with 200 decisions does not
+    pay for 200 every turn.
+    """
+    script = os.path.join(PLUGIN_ROOT, "scripts", "decisions.py")
+    store = os.path.join(cwd or ".", ".frontend-axiom", "decisions.json")
+    if not (os.path.isfile(script) and os.path.isfile(store)):
+        return ""
+    try:
+        out = subprocess.run(
+            [sys.executable, script, "--root", cwd or ".", "match", prompt],
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except (subprocess.TimeoutExpired, OSError):
+        return ""
+    return f"\n\n{out}" if out else ""
+
+
 def project_inventory(cwd: str) -> str:
     """Point at this project's generated inventory, if one exists.
 
@@ -164,7 +189,8 @@ def main() -> int:
     if not prompt or not TRIGGER.search(prompt):
         return 0  # not frontend work — inject nothing, cost nothing
 
-    context = CONTEXT + project_inventory(payload.get("cwd") or os.getcwd())
+    cwd = payload.get("cwd") or os.getcwd()
+    context = CONTEXT + project_inventory(cwd) + team_decisions(cwd, prompt)
 
     json.dump(
         {
