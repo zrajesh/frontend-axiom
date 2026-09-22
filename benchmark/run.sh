@@ -110,7 +110,8 @@ INVALID_TOTAL=0
 for TASKDIR in "$BENCH/tasks"/*/; do
   TASK="$(basename "$TASKDIR")"
   [[ -n "$ONLY" && "$TASK" != "$ONLY" ]] && continue
-  PROMPT="$(cat "$TASKDIR/task.md")"
+  PROMPT=""
+  [[ -f "$TASKDIR/task.md" ]] && PROMPT="$(cat "$TASKDIR/task.md")"
 
   for ARM in treatment control; do
     armpass=0; armtotal=0; arminvalid=0
