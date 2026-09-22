@@ -71,31 +71,30 @@ This is the part that should help weak and strong models alike: a correction loo
 
 Scope is deliberate: the write-time hook runs **lint only**, on the single file just written, because a project-wide typecheck on every write would make the plugin unusable. `tsc`, the test suite, the bundle budget and a live axe scan run in `scripts/verify.sh` at review time.
 
-### What it adds depends on the model — measured, both tiers
+### What it adds depends on the model — measured, both tiers, two scales
 
-Same task, same graders (`tsc`, ESLint, a rendered DOM — no LLM judging), two model tiers:
+Same graders throughout (`tsc`, ESLint, a rendered DOM — no LLM judging whether an answer sounded right).
 
-| `reuse-existing` | With plugin | Without | Delta |
-|---|---|---|---|
-| **haiku** (small) | 0.88 | 0.63 | **+0.25** |
-| **sonnet** (capable) | 1.00 | 1.00 | **0.00** |
+| Task | Model | With | Without | Delta |
+|---|---|---|---|---|
+| `reuse-existing` (3 files) | haiku | 0.88 | 0.63 | **+0.25** |
+| `reuse-existing` (3 files) | sonnet | 1.00 | 1.00 | 0.00 |
+| `reuse-at-scale` (44 components) | sonnet | 1.00 | 1.00 | 0.00 |
+| house convention (destructuring) | sonnet | 1.00 | 0.00 | **+1.00** |
+| 7 of 10 generic-standard cases | sonnet | — | — | 0.00 |
 
-The repo already contained `Modal`, `Button` and `cancelOrder()`, and the task asked for a cancel-confirmation dialog.
+**The scale hypothesis was tested and failed.** The obvious objection to the 3-file result was that a tiny repo is trivially explorable, so the inventory could not show value. `reuse-at-scale` was built to remove that objection: 44 components across 9 directories, the two that must be reused named so they cannot be guessed (`Overlay` not `Modal`, `ActionButton` not `Button`), surrounded by dialog-shaped decoys — `Drawer`, `Sheet`, `Popover`, `Tooltip` — with an assertion that fails the run if a decoy is used.
 
-**On haiku the control forked the design system in all three runs** — a fresh dialog with a raw `<button>` and an inline `fetch`, its summary saying only *"Created `src/CancelOrderDialog`"*. With the plugin it reached 8/8 twice and named *"existing Button and Modal components from the project"*.
+Sonnet's control scored **9/9 in all three runs**. It read the codebase, found the right primitives, avoided every decoy, and used the existing `cancelOrder()`. The inventory changed nothing.
 
-**On sonnet the control scored 8/8 every time without any help.** It explored the repository on its own initiative and reused what was there. The inventory told it nothing it had not already found.
+So the honest shape of this product is narrower than "helps everyone":
 
-That is the honest shape of this product:
-
-| | What actually helps | Measured |
+| | What measurably helps | Delta |
 |---|---|---|
-| **Small models** | Knowledge, the inventory, the write-time correction loop | **+0.25** |
-| **Capable models** | Only what is genuinely unguessable — house conventions — plus verification that produces evidence | **+1.00** on the destructuring convention; **0.00** on everything they already know |
+| **Small models** (haiku) | The inventory, the knowledge base, the write-time correction loop | **+0.25** |
+| **Capable models** (sonnet) | Only conventions nothing in training implies | **+1.00** on the house rule; **0.00** on everything else tested |
 
-A capable model does not need to be told what a Core Web Vital is, that tokens belong in httpOnly cookies, or that a 50,000-row list needs virtualizing. It does all of that unprompted — and it will find your existing components without being handed a map. What it cannot do is invent *your team's* arbitrary convention, and it cannot prove its own work compiles.
-
-**This argues for tiering the payload rather than shipping one static injection**, which is the main open piece of work.
+A capable model already knows the standards, and it will find your existing components without a map — even when they are deliberately hard to find. What it cannot do is invent *your team's* arbitrary convention, or prove its own work compiles. Those two are the whole remaining thesis.
 
 ### Known limits of these numbers
 
