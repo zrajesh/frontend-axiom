@@ -97,18 +97,19 @@ for TASKDIR in "$BENCH/tasks"/*/; do
       # second component that does the same job.
       if [[ -d "$TASKDIR/existing" ]]; then
         cp -R "$TASKDIR/existing/." "$D/" 2>/dev/null
-        python3 "$ROOT/scripts/scan-project.py" "$D" >/dev/null 2>&1
       fi
       cp "$BENCH/template-package.json" "$D/package.json"
       ln -s "$TEMPLATE" "$D/node_modules"
 
       if [[ "$ARM" == "treatment" ]]; then
+        # The inventory ships with the plugin, so it is generated only here.
+        [[ -d "$TASKDIR/existing" ]] && python3 "$ROOT/scripts/scan-project.py" "$D" >/dev/null 2>&1
         (cd "$D" && claude --plugin-dir "$ROOT" ${MODEL:+--model "$MODEL"} \
-            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Skill" "Task" "Agent" \
+            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" "Skill" "Task" "Agent" \
             -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
       else
         (cd "$D" && claude ${MODEL:+--model "$MODEL"} \
-            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" \
+            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" \
             -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
       fi
       # A run that never happened is not a zero — scoring it as one lets a
