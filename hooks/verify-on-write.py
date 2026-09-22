@@ -116,6 +116,59 @@ def lint_errors(root: str, file_path: str) -> list[str]:
     return out
 
 
+# Absolute ceilings for the file just written, not deltas against a baseline.
+#
+# A delta gate at write time fires on legitimate feature growth — add one
+# branch and it complains — and a gate that complains about normal work gets
+# disabled. Absolute ceilings are also more actionable: "this function has
+# complexity 19" needs no context to act on. Checkpoint-to-checkpoint deltas
+# are measured separately by measure-health.py --compare, where growth over a
+# whole task is the thing being judged.
+#
+# Set deliberately loose. These are "something has gone wrong" levels, not
+# style preferences — common lint defaults sit at complexity 10-20.
+CEILINGS = {
+    "max_complexity": 15,
+    "max_function_lines": 80,
+    "max_nesting": 5,
+}
+
+
+def health_problems(file_path: str, root: str) -> list[str]:
+    """Egregious structural problems in the file just written.
+
+    Long-horizon degradation is the failure mode that prompt text provably
+    does not fix (SlopCodeBench: prompt interventions improve initial quality
+    but not the rate of degradation). Catching it at the moment of writing is
+    the one place it can still be cheap to fix.
+    """
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts", "measure-health.py")
+    script = os.path.normpath(script)
+    if not os.path.isfile(script):
+        return []
+    try:
+        proc = subprocess.run(
+            [sys.executable, script, os.path.dirname(file_path), "--json"],
+            cwd=root, capture_output=True, text=True, timeout=TIMEOUT_S,
+        )
+        data = json.loads(proc.stdout or "{}")
+    except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
+        return []
+
+    target = os.path.relpath(file_path, os.path.dirname(file_path))
+    for f in data.get("per_file", []):
+        if os.path.basename(f.get("path", "")) != os.path.basename(target):
+            continue
+        out = []
+        for key, ceiling in CEILINGS.items():
+            value = f.get(key, 0)
+            if value > ceiling:
+                label = key.replace("max_", "").replace("_", " ")
+                out.append(f"  {label}: {value} (ceiling {ceiling})")
+        return out
+    return []
+
+
 def main() -> int:
     try:
         payload = json.loads(sys.stdin.read() or "{}")
@@ -136,11 +189,27 @@ def main() -> int:
         return 0  # nothing to check against — stay quiet
 
     errors = lint_errors(root, file_path)
-    if not errors:
+    structural = health_problems(file_path, root) if not errors else []
+
+    if not errors and not structural:
         clear_attempts(file_path)
         return 0
 
     n = bump_attempts(file_path)
+    if structural and not errors:
+        if n > MAX_BLOCKS_PER_FILE:
+            clear_attempts(file_path)
+            return 0  # tried enough; complexity is a judgement call, not a defect
+        rel = os.path.relpath(file_path, root)
+        print(
+            f"frontend-axiom: {rel} is structurally heavy. Split it before continuing.\n"
+            + "\n".join(structural)
+            + "\nExtract the branchy part into named functions. If the complexity is "
+              "genuinely necessary here, say so explicitly rather than leaving it unremarked.",
+            file=sys.stderr,
+        )
+        return 2
+
     if n > MAX_BLOCKS_PER_FILE:
         # Three tries is enough. Surface it without wedging the session.
         clear_attempts(file_path)
