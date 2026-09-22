@@ -72,6 +72,31 @@ score_run() {
   else
     total=$((total+7))   # spec failed to run at all: all behavioural points lost
   fi
+  # Structural health. Long-horizon degradation is the failure mode that
+  # prompt text provably does not fix, so it is scored, not just described.
+  if [[ -f "$ROOT/scripts/measure-health.py" ]]; then
+    read -r hp ht <<<"$(python3 - "$ROOT/scripts/measure-health.py" "$d" <<'PYEOF'
+import json, subprocess, sys
+script, root = sys.argv[1], sys.argv[2]
+try:
+    out = subprocess.run([sys.executable, script, root, "--json"],
+                         capture_output=True, text=True, timeout=60).stdout
+    e = (json.loads(out or "{}").get("erosion") or {})
+    v = (json.loads(out or "{}").get("verbosity") or {})
+except Exception:
+    print(0, 0); raise SystemExit
+checks = [
+    e.get("max_complexity", 99) <= 15,
+    e.get("max_function_lines", 999) <= 80,
+    e.get("max_nesting", 99) <= 5,
+    v.get("duplication_ratio", 1.0) <= 0.15,
+]
+print(sum(1 for c in checks if c), len(checks))
+PYEOF
+)"
+    passed=$((passed + ${hp:-0})); total=$((total + ${ht:-0}))
+  fi
+
   popd >/dev/null
   echo "$passed $total"
 }
@@ -101,16 +126,34 @@ for TASKDIR in "$BENCH/tasks"/*/; do
       cp "$BENCH/template-package.json" "$D/package.json"
       ln -s "$TEMPLATE" "$D/node_modules"
 
+      # A task may ship checkpoints/ — sequential prompts against the same
+      # sandbox, resumed in one session so context carries forward. This is
+      # the long-horizon regime; single prompts cannot show degradation.
+      PROMPTS=()
+      if [[ -d "$TASKDIR/checkpoints" ]]; then
+        while IFS= read -r cp; do PROMPTS+=("$(cat "$cp")"); done \
+          < <(find "$TASKDIR/checkpoints" -name "*.md" | sort)
+      else
+        PROMPTS=("$PROMPT")
+      fi
+      SID=$(uuidgen | tr "[:upper:]" "[:lower:]")
+
       if [[ "$ARM" == "treatment" ]]; then
         # The inventory ships with the plugin, so it is generated only here.
         [[ -d "$TASKDIR/existing" ]] && python3 "$ROOT/scripts/scan-project.py" "$D" >/dev/null 2>&1
-        (cd "$D" && claude --plugin-dir "$ROOT" ${MODEL:+--model "$MODEL"} \
-            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" "Skill" "Task" "Agent" \
-            -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
+        for ci in "${!PROMPTS[@]}"; do
+          if [[ "$ci" -eq 0 ]]; then SESS=(--session-id "$SID"); else SESS=(--resume "$SID"); fi
+          (cd "$D" && claude --plugin-dir "$ROOT" ${MODEL:+--model "$MODEL"} "${SESS[@]}" \
+              --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" "Skill" "Task" "Agent" \
+              -p "${PROMPTS[$ci]}" < /dev/null >> "$OUT/$TASK-$ARM-$i.log" 2>&1)
+        done
       else
-        (cd "$D" && claude ${MODEL:+--model "$MODEL"} \
-            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" \
-            -p "$PROMPT" < /dev/null > "$OUT/$TASK-$ARM-$i.log" 2>&1)
+        for ci in "${!PROMPTS[@]}"; do
+          if [[ "$ci" -eq 0 ]]; then SESS=(--session-id "$SID"); else SESS=(--resume "$SID"); fi
+          (cd "$D" && claude ${MODEL:+--model "$MODEL"} "${SESS[@]}" \
+              --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "Bash" \
+              -p "${PROMPTS[$ci]}" < /dev/null >> "$OUT/$TASK-$ARM-$i.log" 2>&1)
+        done
       fi
       # A run that never happened is not a zero — scoring it as one lets a
       # rate limit or a crash manufacture a delta out of nothing.
