@@ -102,7 +102,7 @@ FULL STANDARDS — read the ones this task touches (absolute paths, read before 
   {KNOWLEDGE}/privacy-compliance.md    consent gating, PII, deletion
 
 DEEPER WORKFLOWS: /frontend-axiom:init-project (stack setup), :new-feature (interview →
-build), :audit (independent review), :pixel-check (Figma diff), :learn-guide (ingest docs).
+build), :audit (independent review), :pixel-check (Figma diff), :decide (record a team decision).
 </frontend-axiom-standards>"""
 
 
