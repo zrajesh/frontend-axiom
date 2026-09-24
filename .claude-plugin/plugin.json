@@ -2,7 +2,7 @@
   "name": "frontend-axiom",
   "displayName": "Frontend Axiom",
   "description": "Turns Claude Code into a senior frontend architect for React/Next.js: verification gates on the build path, a generated inventory of your repo's own components and endpoints, house conventions enforced in CI, and independent audits \u2014 with an ablation benchmark that reports what it actually adds.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": {
     "name": "Rajesh Bhattarai",
     "email": "rajesh.iamdev@gmail.com"

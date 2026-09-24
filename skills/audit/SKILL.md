@@ -31,7 +31,7 @@ It runs: typecheck, lint (incl. `jsx-a11y`), test suite, bundle budget, and a li
 Read the results exactly as written:
 
 - **FAIL** → a Critical or Warning finding with the tool's own output quoted as evidence. Never soften a gate failure to a Suggestion.
-- **SKIP** → **this is a finding, not a neutral result.** A gate that cannot run proves nothing. "No test script", "no eslint config", or "eslint matched 0 files" each mean the project has no enforcement there, which `${CLAUDE_PLUGIN_ROOT}/knowledge/testing.md` and `release-operations.md` treat as a defect in its own right.
+- **SKIP** → **this is a finding, not a neutral result.** A gate that cannot run proves nothing. "No test script", "no eslint config", or "eslint matched 0 files" each mean the project has no enforcement there, which `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/testing.md` and `release-operations.md` treat as a defect in its own right.
 - **PASS** → cite it. "Typecheck clean, 0 lint errors across 34 files" is worth more in a report than any adjective.
 
 A green gate is not a clean bill of health — it bounds what's mechanically checkable. Everything in the checklist below still needs a human-grade read.
@@ -39,8 +39,8 @@ A green gate is not a clean bill of health — it bounds what's mechanically che
 ## Process
 
 1. Do not assume intent from conversation history — evaluate the code as it exists, on its own merits.
-2. Walk every file in scope against each of: `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` (SOLID, destructuring rule, 5-state handling), `${CLAUDE_PLUGIN_ROOT}/knowledge/testing.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/security.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/performance.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/release-operations.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/caching.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/accessibility.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/react-nextjs.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/state-data.md`, plus any other relevant file in `knowledge/`.
-   - A green lint run is not sufficient evidence the destructuring convention holds — the rule can't see single deep reads or referentially-unstable defaults, and it over-fires on discriminated unions. Read for those yourself; see `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` §3.
+2. Walk every file in scope against each of: `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/principles.md` (SOLID, destructuring rule, 5-state handling), `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/testing.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/security.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/performance.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/observability.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/release-operations.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/caching.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/accessibility.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/react-nextjs.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/state-data.md`, plus any other relevant file in `knowledge/`.
+   - A green lint run is not sufficient evidence the destructuring convention holds — the rule can't see single deep reads or referentially-unstable defaults, and it over-fires on discriminated unions. Read for those yourself; see `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/principles.md` §3.
 3. For each finding, classify severity: **Critical** (security hole, broken functionality, data loss risk), **Warning** (violates a hard rule but not exploitable/broken — e.g. dot-chained access, missing empty-state), **Suggestion** (style/optimization, non-blocking).
 4. Report only — do not fix issues in this pass. Fixing is a separate, explicit follow-up step the user asks for after reading the report.
 

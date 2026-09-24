@@ -23,13 +23,13 @@ Check for `package.json` at the repo root.
   2. CSS approach: Tailwind CSS / CSS Modules / Styled Components / Other?
   3. State & data layer: RTK Query / Zustand / Other?
   4. TypeScript or JavaScript?
-- Never default silently — even if this plugin's own preference is Next.js + RTK Query + TypeScript (see `${CLAUDE_PLUGIN_ROOT}/knowledge/react-nextjs.md`, `state-data.md`), that's a recommendation to surface, not a default to assume.
+- Never default silently — even if this plugin's own preference is Next.js + RTK Query + TypeScript (see `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/react-nextjs.md`, `state-data.md`), that's a recommendation to surface, not a default to assume.
 
 ## Step 2 — scaffold or apply
 
 Once confirmed:
 - Fresh project: scaffold with the appropriate tool (`create-next-app`, or Vite for a React SPA) and install the chosen CSS/state packages.
-- Existing project: don't restructure what's already there. Note conventions to adopt going forward, and flag (don't silently fix) any existing code that conflicts with `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md` — that's a job for `/frontend-axiom:audit`, not a blanket auto-rewrite.
+- Existing project: don't restructure what's already there. Note conventions to adopt going forward, and flag (don't silently fix) any existing code that conflicts with `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/principles.md` — that's a job for `/frontend-axiom:audit`, not a blanket auto-rewrite.
 
 ### Wiring in the ESLint rule (both cases)
 
@@ -48,7 +48,7 @@ Then register it in whichever config style the project actually uses — **check
   ```
 - Legacy (`.eslintrc.*`): `extends: ["plugin:frontend-axiom/legacy-recommended"]`
 
-The shipped config sets the house rule to **`error`**, so it actually gates — a rule that can only warn is decoration, and `${CLAUDE_PLUGIN_ROOT}/knowledge/release-operations.md` forbids leaving one there.
+The shipped config sets the house rule to **`error`**, so it actually gates — a rule that can only warn is decoration, and `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/release-operations.md` forbids leaving one there.
 
 On an **existing** codebase that will light up immediately. Stage it rather than mass-rewriting during init:
 
@@ -69,7 +69,7 @@ Write or update the project's root `CLAUDE.md` with a short "Stack" section reco
 
 ## Step 4 — read the knowledge base
 
-Before generating any scaffold code, read `${CLAUDE_PLUGIN_ROOT}/knowledge/principles.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/react-nextjs.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/css.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/state-data.md`, and any other file in `knowledge/` relevant to this project so the initial structure already follows them (feature-first folders, destructuring convention, 5-state data handling, etc).
+Before generating any scaffold code, read `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/principles.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/react-nextjs.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/css.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/state-data.md`, and any other file in `knowledge/` relevant to this project so the initial structure already follows them (feature-first folders, destructuring convention, 5-state data handling, etc).
 
 ## Step 5 — build the project inventory
 
@@ -90,9 +90,9 @@ Regenerate it whenever components or endpoints are added. Mention it in the proj
 
 Scaffold time is the cheapest moment to set these up, and the hardest to add later once hundreds of files exist. Set up each one, or explicitly tell the user which you skipped and why:
 
-- **Security headers** (`${CLAUDE_PLUGIN_ROOT}/knowledge/security.md`) — CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors` in `next.config` / the hosting layer.
-- **Accessibility linting** (`${CLAUDE_PLUGIN_ROOT}/knowledge/accessibility.md`) — `eslint-plugin-jsx-a11y` alongside the frontend-axiom rule.
-- **Test runner + CI gate** (`${CLAUDE_PLUGIN_ROOT}/knowledge/testing.md`) — the test tooling and a CI job that actually fails the build on failure. A test setup nobody runs is worth nothing.
-- **Error tracking and RUM** (`${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md`) — wired on day one, so the app is never in production unobserved.
-- **Caching defaults** (`${CLAUDE_PLUGIN_ROOT}/knowledge/caching.md`) — `Cache-Control` for hashed static assets vs HTML/API.
-- **SEO baseline** (`${CLAUDE_PLUGIN_ROOT}/knowledge/seo-ai-seo.md`) — `robots.txt` and a sitemap route, if the app is publicly indexable.
+- **Security headers** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/security.md`) — CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors` in `next.config` / the hosting layer.
+- **Accessibility linting** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/accessibility.md`) — `eslint-plugin-jsx-a11y` alongside the frontend-axiom rule.
+- **Test runner + CI gate** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/testing.md`) — the test tooling and a CI job that actually fails the build on failure. A test setup nobody runs is worth nothing.
+- **Error tracking and RUM** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/observability.md`) — wired on day one, so the app is never in production unobserved.
+- **Caching defaults** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/caching.md`) — `Cache-Control` for hashed static assets vs HTML/API.
+- **SEO baseline** (`${CLAUDE_PLUGIN_ROOT}/knowledge/primer/seo-ai-seo.md`) — `robots.txt` and a sitemap route, if the app is publicly indexable.

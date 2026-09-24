@@ -20,7 +20,7 @@ allowed-tools: Read, Edit, Bash
 
 ## Step 4 — diff and report
 
-Compare the two and report concrete deltas, not vague impressions: exact spacing differences, color hex mismatches, font-size/weight mismatches, alignment/gap differences. Reference `${CLAUDE_PLUGIN_ROOT}/knowledge/css.md` for how the project's chosen styling approach expresses tokens (Tailwind scale, CSS variables, etc.) so fixes match the existing convention rather than introducing one-off values.
+Compare the two and report concrete deltas, not vague impressions: exact spacing differences, color hex mismatches, font-size/weight mismatches, alignment/gap differences. Reference `${CLAUDE_PLUGIN_ROOT}/knowledge/primer/css.md` for how the project's chosen styling approach expresses tokens (Tailwind scale, CSS variables, etc.) so fixes match the existing convention rather than introducing one-off values.
 
 ## Step 5 — fix and iterate
 

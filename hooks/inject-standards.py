@@ -50,60 +50,37 @@ TRIGGER = re.compile(
     """,
 )
 
-CONTEXT = f"""\
-<frontend-axiom-standards>
-Frontend Axiom is ACTIVE. Apply these without being asked. They override generic habits.
+HOUSE = os.path.join(KNOWLEDGE, "house.md")
+PRIMER = os.path.join(KNOWLEDGE, "primer")
 
-NON-NEGOTIABLE:
-1. LOOK FIRST, THEN ASK. Never invent an API shape, field name, or endpoint — but do not
-   ask for something the repository already answers. Order: check the inventory below,
-   grep the codebase, read the types. ASK only for what genuinely is not discoverable
-   (a product decision, an endpoint that does not exist yet, an ambiguous requirement).
-   Stalling on a question the code already answers wastes the user's turn as surely as
-   guessing wrong does.
-2. EVERY data-fetching surface handles five states: loading / data / EMPTY (visually
-   distinct, not a blank list) / error (with retry) / refetching (don't blank stale UI).
-3. AUTH TOKENS live in httpOnly+Secure+SameSite cookies. NEVER localStorage or
-   sessionStorage — one XSS there is account takeover. Logout revokes server-side AND
-   purges the client cache.
-4. DESTRUCTURE TO THE LEAF VALUE, then use the bare variable. Pulling out the object and
-   still reading through it is NOT enough:
-       const {{ user }} = props; user.name        <- still wrong
-       const {{ user = {{}} }} = props;
-       const {{ name = "", email = "" }} = user;  <- correct; now use `name`, `email`
-   Applies at every depth. Object/array defaults that reach a dependency array must be
-   module-level constants, not fresh literals. EXCEPTION: discriminated unions — narrow on
-   the whole value first, destructure inside the branch (destructuring first breaks
-   TypeScript narrowing).
-5. TESTS ship with the code. Untested auth, payment, or mutation logic is a Critical defect.
-6. SEMANTIC HTML, keyboard operability, real labels, and contrast are defaults, not a pass.
-7. NO unbounded collection fetch. Past ~1,000 rows, virtualize. Append-heavy data uses
-   cursor, not offset pagination.
-8. Third-party scripts that touch user data do NOT load before consent — the network
-   request itself is the violation.
 
-FULL STANDARDS — read the ones this task touches (absolute paths, read before deciding):
-  {KNOWLEDGE}/principles.md            ALWAYS — SOLID, the 5-state rule, conventions
-  {KNOWLEDGE}/react-nextjs.md          components, Server vs Client, SSR/SSG/ISR/CSR
-  {KNOWLEDGE}/state-data.md            RTK Query, caching, normalization
-  {KNOWLEDGE}/auth.md                  sessions, refresh rotation, logout, route guards
-  {KNOWLEDGE}/security.md              CSP, XSS, CSRF, headers, input validation
-  {KNOWLEDGE}/testing.md               what to test, coverage policy, CI gating
-  {KNOWLEDGE}/performance.md           Core Web Vitals, budgets, low-end device profile
-  {KNOWLEDGE}/accessibility.md         semantics, keyboard, contrast
-  {KNOWLEDGE}/lists-and-pagination.md  virtualization, cursor vs offset
-  {KNOWLEDGE}/observability.md         error tracking, RUM, alerting
-  {KNOWLEDGE}/release-operations.md    CI gates, feature flags, rollback
-  {KNOWLEDGE}/caching.md               HTTP/CDN/service worker/API cache
-  {KNOWLEDGE}/css.md                   styling approach, CLS
-  {KNOWLEDGE}/storage.md               cookies vs local/session vs IndexedDB
-  {KNOWLEDGE}/seo-ai-seo.md            metadata, structured data, crawlability
-  {KNOWLEDGE}/i18n.md                  ICU, Intl, RTL, hreflang
-  {KNOWLEDGE}/privacy-compliance.md    consent gating, PII, deletion
+def house_rules() -> str:
+    """The house decisions, injected inline rather than linked.
 
-DEEPER WORKFLOWS: /frontend-axiom:init-project (stack setup), :new-feature (interview →
-build), :audit (independent review), :pixel-check (Figma diff), :decide (record a team decision).
-</frontend-axiom-standards>"""
+    The previous version listed seventeen document paths and hoped the model
+    would read the relevant ones. Six ablations showed it gains nothing from
+    the material in them — it already knows that — while the routing table
+    itself cost ~350 tokens describing files that were often never opened.
+
+    What a model cannot derive is which choices THIS team made. That is
+    house.md, and it is injected directly: a path is a suggestion, injected
+    text is not.
+    """
+    try:
+        body = open(HOUSE, encoding="utf-8").read().strip()
+    except OSError:
+        return ""
+    return f"""
+<frontend-axiom>
+These are this project's decisions. Apply them without being asked; they
+override generic habits and anything the surrounding code merely implies.
+
+{body}
+
+Reference material behind these choices: {PRIMER}
+Workflows: /frontend-axiom:init-project · :new-feature · :audit · :pixel-check
+           · :decide (record a decision the codebase cannot express)
+</frontend-axiom>"""
 
 
 def team_decisions(cwd: str, prompt: str) -> str:
@@ -190,7 +167,7 @@ def main() -> int:
         return 0  # not frontend work — inject nothing, cost nothing
 
     cwd = payload.get("cwd") or os.getcwd()
-    context = CONTEXT + project_inventory(cwd) + team_decisions(cwd, prompt)
+    context = house_rules() + project_inventory(cwd) + team_decisions(cwd, prompt)
 
     json.dump(
         {

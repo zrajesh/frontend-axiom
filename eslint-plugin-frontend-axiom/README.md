@@ -1,6 +1,6 @@
 # eslint-plugin-frontend-axiom
 
-Enforces the Frontend Axiom destructuring convention (`knowledge/principles.md` §3) in CI, not just by agent convention.
+Enforces the Frontend Axiom destructuring convention (`knowledge/primer/principles.md` §3) in CI, not just by agent convention.
 
 ## Rules
 
@@ -33,7 +33,7 @@ This is a heuristic, not a data-flow/type analysis. It skips:
 
 - A single property accessed twice (e.g. `user.name` read twice) won't trigger — only 2+ *distinct* properties do — but a legitimate pattern like `theme.colors.primary` used alongside `theme.spacing.md` will trigger on `theme`, even though destructuring nested design-token objects isn't always cleaner. Use `// eslint-disable-next-line frontend-axiom/no-repeated-property-access` or add the base name to `ignore` for cases like this.
 - Fluent/builder-style chains that happen to read two properties before calling something.
-- Discriminated unions read after a narrowing check (`switch (action.type)` then `action.payload` per branch). Destructuring there is the *wrong* fix — it breaks TypeScript narrowing. See `knowledge/principles.md` §3 exception 4; suppress with an inline disable or the `ignore` option.
+- Discriminated unions read after a narrowing check (`switch (action.type)` then `action.payload` per branch). Destructuring there is the *wrong* fix — it breaks TypeScript narrowing. See `knowledge/primer/principles.md` §3 exception 4; suppress with an inline disable or the `ignore` option.
 
 ## Coverage
 
@@ -51,7 +51,7 @@ v0.1 missed the middle four. They're covered now because the rule tracks **every
 ## Known limitations
 
 - **A single deep read isn't flagged.** `dataObj.user.email` appearing exactly once sees one property at each level, so nothing crosses the threshold. The rule targets *repeated* reaching-in; a lone deep read is left to review.
-- **Not type-aware.** It can't tell a discriminated union from an ordinary object, so it will fire on `action.type` + `action.payload` in a narrowing `switch` — where destructuring is the *wrong* fix because it breaks TypeScript narrowing (`knowledge/principles.md` §3, exception 4). Suppress with an inline disable or the `ignore` option.
+- **Not type-aware.** It can't tell a discriminated union from an ordinary object, so it will fire on `action.type` + `action.payload` in a narrowing `switch` — where destructuring is the *wrong* fix because it breaks TypeScript narrowing (`knowledge/primer/principles.md` §3, exception 4). Suppress with an inline disable or the `ignore` option.
 - **Nested design-token objects** (`theme.colors` + `theme.spacing`) are flagged even though destructuring them isn't always clearer. Add the base name to `ignore`.
 - **Referential instability is invisible to it.** `const { skills = [] } = user` passes lint but allocates a fresh array each render. That's a review concern, not a lint one.
 
@@ -101,7 +101,7 @@ Note the different config name: `recommended` is the flat config (an object with
 npm test
 ```
 
-Runs the rule against ESLint's official `RuleTester` (8 valid + 3 invalid cases), covering the ignore-list, call/assignment exclusions, computed access, per-scope budgets, the `ignore` and `threshold` options, and the exact anti-pattern from `knowledge/principles.md` §3.
+Runs the rule against ESLint's official `RuleTester` (8 valid + 3 invalid cases), covering the ignore-list, call/assignment exclusions, computed access, per-scope budgets, the `ignore` and `threshold` options, and the exact anti-pattern from `knowledge/primer/principles.md` §3.
 
 ## Status
 
